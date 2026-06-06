@@ -210,26 +210,6 @@ for _, h := range holidays {
 // 2026-04-13: Songkran Festival
 ```
 
-### GetHolidaysThaiFA
-
-```go
-func (c *Client) GetHolidaysThaiFA(ctx context.Context, year int) (*ThaiFAResponse, error)
-```
-
-Returns holidays in ThaiFA-compatible format (wrapped response with metadata).
-
-**Response:** `*ThaiFAResponse`
-
-```json
-{
-  "result": {
-    "api": "API_V2.FIHolidays",
-    "timestamp": "2026-06-06 12:00:00",
-    "data": [...]
-  }
-}
-```
-
 ---
 
 ## Exchange Rates

@@ -67,54 +67,6 @@ func TestGetHolidays(t *testing.T) {
 	}
 }
 
-func TestGetHolidaysThaiFA(t *testing.T) {
-	mockResponse := HolidaysResponse{
-		Result: HolidaysResult{
-			API: "API_V2.FIHolidays",
-			Data: []Holiday{
-				{
-					HolidayWeekDay:         "Thursday",
-					HolidayWeekDayThai:     "วันพฤหัสบดี",
-					Date:                   "2026-01-01",
-					DateThai:               "01/01/2569",
-					HolidayDescription:     "New Year's Day",
-					HolidayDescriptionThai: "วันขึ้นปีใหม่",
-				},
-			},
-		},
-	}
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(mockResponse); err != nil {
-			t.Errorf("failed to encode response: %v", err)
-		}
-	}))
-	defer server.Close()
-
-	client, err := NewClient(
-		WithToken("test"),
-		WithBaseURL(server.URL),
-		WithRateLimiter(&NoOpRateLimiter{}),
-	)
-	if err != nil {
-		t.Fatalf("failed to create client: %v", err)
-	}
-
-	resp, err := client.GetHolidaysThaiFA(context.Background(), 2026)
-	if err != nil {
-		t.Fatalf("GetHolidaysThaiFA failed: %v", err)
-	}
-
-	if resp.Result.API != "API_V2.FIHolidays" {
-		t.Errorf("expected api API_V2.FIHolidays, got %s", resp.Result.API)
-	}
-	if len(resp.Result.Data) != 1 {
-		t.Fatalf("expected 1 holiday, got %d", len(resp.Result.Data))
-	}
-}
-
 func TestGetHolidays_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)

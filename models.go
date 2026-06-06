@@ -19,20 +19,3 @@ type HolidaysResult struct {
 type HolidaysResponse struct {
 	Result HolidaysResult `json:"result"`
 }
-
-type ThaiFAHoliday struct {
-	HolidayWeekDay         string `json:"HolidayWeekDay"`
-	HolidayWeekDayThai     string `json:"HolidayWeekDayThai"`
-	Date                   string `json:"Date"`
-	DateThai               string `json:"DateThai"`
-	HolidayDescription     string `json:"HolidayDescription"`
-	HolidayDescriptionThai string `json:"HolidayDescriptionThai"`
-}
-
-type ThaiFAResponse struct {
-	Result struct {
-		API       string          `json:"api"`
-		Timestamp string          `json:"timestamp"`
-		Data      []ThaiFAHoliday `json:"data"`
-	} `json:"result"`
-}

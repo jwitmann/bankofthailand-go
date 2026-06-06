@@ -55,20 +55,18 @@ func outputJSON(holidays []bot.Holiday) {
 }
 
 func outputThaiFA(holidays []bot.Holiday) {
-	thaifa := bot.ThaiFAResponse{
-		Result: struct {
-			API       string              `json:"api"`
-			Timestamp string              `json:"timestamp"`
-			Data      []bot.ThaiFAHoliday `json:"data"`
-		}{
-			API:       "API_V2.FIHolidays",
-			Timestamp: time.Now().Format("2006-01-02 15:04:05"),
-			Data:      make([]bot.ThaiFAHoliday, len(holidays)),
-		},
+	type holiday struct {
+		HolidayWeekDay         string `json:"HolidayWeekDay"`
+		HolidayWeekDayThai     string `json:"HolidayWeekDayThai"`
+		Date                   string `json:"Date"`
+		DateThai               string `json:"DateThai"`
+		HolidayDescription     string `json:"HolidayDescription"`
+		HolidayDescriptionThai string `json:"HolidayDescriptionThai"`
 	}
 
+	data := make([]holiday, len(holidays))
 	for i, h := range holidays {
-		thaifa.Result.Data[i] = bot.ThaiFAHoliday{
+		data[i] = holiday{
 			HolidayWeekDay:         h.HolidayWeekDay,
 			HolidayWeekDayThai:     h.HolidayWeekDayThai,
 			Date:                   h.Date,
@@ -78,9 +76,19 @@ func outputThaiFA(holidays []bot.Holiday) {
 		}
 	}
 
+	result := struct {
+		API       string    `json:"api"`
+		Timestamp string    `json:"timestamp"`
+		Data      []holiday `json:"data"`
+	}{
+		API:       "API_V2.FIHolidays",
+		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
+		Data:      data,
+	}
+
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(thaifa); err != nil {
+	if err := enc.Encode(result); err != nil {
 		fmt.Fprintf(os.Stderr, "Error encoding JSON: %v\n", err)
 		os.Exit(1)
 	}

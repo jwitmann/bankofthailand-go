@@ -151,6 +151,10 @@ func (c *Client) requestJSONBase(ctx context.Context, path string, query url.Val
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNoContent {
+		return ErrNoContent
+	}
+
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 

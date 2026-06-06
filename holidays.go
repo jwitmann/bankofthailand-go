@@ -2,6 +2,7 @@ package bankofthailand
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -21,6 +22,9 @@ func (c *Client) GetHolidaysRaw(ctx context.Context, year int) (*HolidaysRespons
 
 	var result HolidaysResponse
 	if err := c.requestJSONBase(ctx, "/", query, &result); err != nil {
+		if errors.Is(err, ErrNoContent) {
+			return &HolidaysResponse{Result: HolidaysResult{Data: []Holiday{}}}, nil
+		}
 		return nil, fmt.Errorf("failed to get holidays: %w", err)
 	}
 	return &result, nil

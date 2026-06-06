@@ -1,0 +1,287 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Bangkok Interbank Offered Rate (BIBOR) (Percent per annum)",
+    "version": "2.0.0",
+    "x-ibm-name": "bangkok-interbank-offered-rate-bibor-percent-per-annum"
+  },
+  "servers": [
+    {
+      "url": "https://gateway.api.bot.or.th/BIBOR/v2"
+    }
+  ],
+  "security": [
+    {
+      "clientIdHeader": []
+    }
+  ],
+  "tags": [],
+  "paths": {
+    "/bibor_rate/": {
+      "get": {
+        "description": "Bangkok Interbank Offered Rate (BIBOR) by Banks (Percent per annum) <br> <br> BIBOR by banks are classified by lending period (tenor), the rates at which contributing banks offer to lend THB funds to prime banks, in a reasonable market size, on an unsecured basis in the Bangkok interbank market. <br> Frequency : Daily <br> Lag time : -- <br> Release schedule : Every business day at 11.15 a.m. <br> Source of data : Bank of Thailand <br> More detail [CLICK](https://app.bot.or.th/bibor/publish/PublishRate.aspx?Lang=TH)",
+        "parameters": [
+          {
+            "name": "start_period",
+            "in": "query",
+            "description": "Start Period Date (YYYY-MM-DD) EX. 2017-06-30",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end_period",
+            "in": "query",
+            "description": "End Preiod Date (YYYY-MM-DD) EX. 2017-06-30",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bank",
+            "in": "query",
+            "description": "Bank Name EX. Mizuho Bank",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bangkok%20Interbank%20Offered%20Rate%20(BIBOR)%20by%20Banks%20(Percent%20per%20annum)%20Response%20Parameter"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bibor_avg_rate/": {
+      "get": {
+        "description": "Average Bangkok Interbank Offered Rate (BIBOR) (Percent per annum) <br> <br> Average BIBOR are classified by lending period (tenor), the rates at which contributing banks offer to lend THB funds to prime banks, in a reasonable market size, on an unsecured basis in the Bangkok interbank market. <br> Frequency : Daily <br> Lag time : -- <br> Release schedule : Every business day at 11.15 a.m. <br> Source of data : Bank of Thailand <br> More detail [CLICK](https://app.bot.or.th/bibor/publish/PublishRate.aspx?Lang=TH)",
+        "parameters": [
+          {
+            "name": "start_period",
+            "in": "query",
+            "description": "Start Period Date (YYYY-MM-DD) EX. 2017-06-30",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end_period",
+            "in": "query",
+            "description": "End Preiod Date (YYYY-MM-DD) EX. 2017-06-30",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Average%20Bangkok%20Interbank%20Offered%20Rate%20(BIBOR)%20(Percent%20per%20annum)%20Response%20Parameter"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Bangkok Interbank Offered Rate (BIBOR) by Banks (Percent per annum) Response Parameter": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "api": {
+                "type": "string",
+                "example": "Bangkok Interbank Offered Rate (BIBOR) by Banks (Percent per annum)"
+              },
+              "timestamp": {
+                "type": "string",
+                "example": "2017-07-12 11:11:38"
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "data_detail": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "period": {
+                          "type": "string",
+                          "example": "2015-02-13"
+                        },
+                        "bankname_th": {
+                          "type": "string",
+                          "example": "ธนาคารมิซูโฮ จำกัด"
+                        },
+                        "bankname_eng": {
+                          "type": "string",
+                          "example": "Mizuho Bank"
+                        },
+                        "bibor_o_n": {
+                          "type": "string",
+                          "example": "2.00000"
+                        },
+                        "bibor_1_week": {
+                          "type": "string",
+                          "example": "2.03000"
+                        },
+                        "bibor_1_month": {
+                          "type": "string",
+                          "example": "2.06000"
+                        },
+                        "bibor_2_month": {
+                          "type": "string",
+                          "example": "null"
+                        },
+                        "bibor_3_month": {
+                          "type": "string",
+                          "example": "2.13000"
+                        },
+                        "bibor_6_month": {
+                          "type": "string",
+                          "example": "2.24000"
+                        },
+                        "bibor_9_month": {
+                          "type": "string",
+                          "example": "2.34000"
+                        },
+                        "bibor_1_year": {
+                          "type": "string",
+                          "example": "2.44000"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": ""
+      },
+      "Average Bangkok Interbank Offered Rate (BIBOR) (Percent per annum) Response Parameter": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "api": {
+                "type": "string",
+                "example": "Average Bangkok Interbank Offered Rate (BIBOR) (Percent per annum)"
+              },
+              "timestamp": {
+                "type": "string",
+                "example": "2017-07-12 11:10:00"
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "data_detail": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "period": {
+                          "type": "string",
+                          "example": "2015-02-13"
+                        },
+                        "bibor_o_n": {
+                          "type": "string",
+                          "example": "2.00000"
+                        },
+                        "bibor_1_week": {
+                          "type": "string",
+                          "example": "2.03500"
+                        },
+                        "bibor_1_month": {
+                          "type": "string",
+                          "example": "2.08333"
+                        },
+                        "bibor_2_month": {
+                          "type": "string",
+                          "example": "null"
+                        },
+                        "bibor_3_month": {
+                          "type": "string",
+                          "example": "2.17500"
+                        },
+                        "bibor_6_month": {
+                          "type": "string",
+                          "example": "2.28750"
+                        },
+                        "bibor_9_month": {
+                          "type": "string",
+                          "example": "2.42333"
+                        },
+                        "bibor_1_year": {
+                          "type": "string",
+                          "example": "2.53667"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": ""
+      }
+    },
+    "parameters": {
+      "start_period": {
+        "name": "start_period",
+        "in": "query",
+        "description": "Start Period Date (YYYY-MM-DD) EX. 2017-06-30",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "end_period": {
+        "name": "end_period",
+        "in": "query",
+        "description": "End Preiod Date (YYYY-MM-DD) EX. 2017-06-30",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "bank": {
+        "name": "bank",
+        "in": "query",
+        "description": "Bank Name EX. Mizuho Bank",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "clientIdHeader": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "x-original-swagger-version": "2.0"
+}

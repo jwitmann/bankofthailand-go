@@ -10,6 +10,16 @@ type Holiday struct {
 	HolidayType            string `json:"HolidayType,omitempty"`
 }
 
+type HolidaysResult struct {
+	API       string    `json:"api"`
+	Timestamp string    `json:"timestamp"`
+	Data      []Holiday `json:"data"`
+}
+
+type HolidaysResponse struct {
+	Result HolidaysResult `json:"result"`
+}
+
 type ThaiFAHoliday struct {
 	HolidayWeekDay         string `json:"HolidayWeekDay"`
 	HolidayWeekDayThai     string `json:"HolidayWeekDayThai"`

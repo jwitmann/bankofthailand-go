@@ -9,14 +9,19 @@ import (
 )
 
 func TestGetHolidays(t *testing.T) {
-	mockResponse := []Holiday{
-		{
-			Date:                   "2026-01-01",
-			DateThai:               "01/01/2569",
-			HolidayWeekDay:         "Thursday",
-			HolidayWeekDayThai:     "วันพฤหัสบดี",
-			HolidayDescription:     "New Year's Day",
-			HolidayDescriptionThai: "วันขึ้นปีใหม่",
+	mockResponse := HolidaysResponse{
+		Result: HolidaysResult{
+			API: "API_V2.FIHolidays",
+			Data: []Holiday{
+				{
+					Date:                   "2026-01-01",
+					DateThai:               "01/01/2569",
+					HolidayWeekDay:         "Thursday",
+					HolidayWeekDayThai:     "วันพฤหัสบดี",
+					HolidayDescription:     "New Year's Day",
+					HolidayDescriptionThai: "วันขึ้นปีใหม่",
+				},
+			},
 		},
 	}
 
@@ -63,14 +68,19 @@ func TestGetHolidays(t *testing.T) {
 }
 
 func TestGetHolidaysThaiFA(t *testing.T) {
-	mockResponse := []Holiday{
-		{
-			HolidayWeekDay:         "Thursday",
-			HolidayWeekDayThai:     "วันพฤหัสบดี",
-			Date:                   "2026-01-01",
-			DateThai:               "01/01/2569",
-			HolidayDescription:     "New Year's Day",
-			HolidayDescriptionThai: "วันขึ้นปีใหม่",
+	mockResponse := HolidaysResponse{
+		Result: HolidaysResult{
+			API: "API_V2.FIHolidays",
+			Data: []Holiday{
+				{
+					HolidayWeekDay:         "Thursday",
+					HolidayWeekDayThai:     "วันพฤหัสบดี",
+					Date:                   "2026-01-01",
+					DateThai:               "01/01/2569",
+					HolidayDescription:     "New Year's Day",
+					HolidayDescriptionThai: "วันขึ้นปีใหม่",
+				},
+			},
 		},
 	}
 

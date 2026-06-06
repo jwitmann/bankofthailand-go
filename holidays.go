@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 func (c *Client) GetHolidays(ctx context.Context, year int) ([]Holiday, error) {
@@ -18,12 +19,12 @@ func (c *Client) GetHolidays(ctx context.Context, year int) ([]Holiday, error) {
 	}
 	defer resp.Body.Close()
 
-	var result []Holiday
+	var result HolidaysResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("failed to decode holidays response: %w", err)
 	}
 
-	return result, nil
+	return result.Result.Data, nil
 }
 
 func (c *Client) GetHolidaysThaiFA(ctx context.Context, year int) (*ThaiFAResponse, error) {
@@ -39,7 +40,7 @@ func (c *Client) GetHolidaysThaiFA(ctx context.Context, year int) (*ThaiFARespon
 			Data      []ThaiFAHoliday `json:"data"`
 		}{
 			API:       "API_V2.FIHolidays",
-			Timestamp: "",
+			Timestamp: time.Now().Format("2006-01-02 15:04:05"),
 			Data:      make([]ThaiFAHoliday, len(holidays)),
 		},
 	}

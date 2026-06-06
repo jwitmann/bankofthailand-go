@@ -1,0 +1,88 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Policy Rate (Percent per annum)",
+    "description": "Policy Interest Rate is the rate that The Monetary Policy Committee announced in conducting monetary policy under the inflation-targeting framework. The 14-day RP rate was used as the policy interest rate up until 16 January 2007, after which the policy interest rate was switched to the 1- day RP rate. Since 12 February 2008, with the closure of the BOT- run RP market, this was switched to the 1-day bilateral RP rate. \nFrequency : Following to the schedule of The Monetary Policy Committee Meeting\nLag time : --\nRelease schedule : 2.05 p.m. of the meeting date \nSource of data : Bank of Thailand \nMore detail [CLICK](https://www.bot.or.th/th/news-and-media/news.html?mainTopic=mt5)",
+    "version": "3.0.1",
+    "x-ibm-name": "policy-rate-percent-per-annum"
+  },
+  "servers": [
+    {
+      "url": "https://gateway.api.bot.or.th/PolicyRate/v3/policy_rate"
+    }
+  ],
+  "security": [
+    {
+      "clientIdHeader": []
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "200 OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response%20Parameters"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Response Parameters": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "api": {
+                "type": "string",
+                "example": "Policy Rate (Percent per annum)"
+              },
+              "timestamp": {
+                "type": "string",
+                "example": "2024-08-01 13:56:13"
+              },
+              "data": {
+                "type": "string",
+                "example": "2.50"
+              },
+              "announcement_date": {
+                "type": "string",
+                "example": "2024-07-29"
+              },
+              "news_text_en": {
+                "type": "string",
+                "example": "On 29 July 2024, the MPC voted 6 to 1 to maintain the policy rate at 2.50 percent. One member voted to cut the policy rate by 0.25 percentage point."
+              },
+              "news_text_th": {
+                "type": "string",
+                "example": "วันที่ 29 กรกฎาคม 2567 กนง. มีมติ 6 ต่อ 1 เสียง ให้คงอัตราดอกเบี้ยนโยบายไว้ที่ร้อยละ 2.50 ต่อปี โดย 1 เสียง เห็นควรให้ลดอัตราดอกเบี้ยนโยบายร้อยละ 0.25 ต่อปี"
+              },
+              "effective_datetime": {
+                "type": "string",
+                "example": "2024-07-29 14:00:00"
+              }
+            }
+          }
+        },
+        "description": ""
+      }
+    },
+    "securitySchemes": {
+      "clientIdHeader": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "x-original-swagger-version": "2.0"
+}

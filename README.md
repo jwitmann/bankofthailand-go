@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue.svg)](https://golang.org)
 
-Official Go client for [Bank of Thailand (BOT) Public APIs](https://bot-public-api.apigee.io/). Zero external dependencies.
+Go client for [Bank of Thailand (BOT) Public APIs](https://bot-public-api.apigee.io/). Zero external dependencies.
 
 ## Features
 

@@ -18,11 +18,47 @@ const (
 	defaultTimeout = 30 * time.Second
 )
 
+// Endpoint keys used for token and rate-limiter selection.
+const (
+	endpointOthers        = "others"
+	endpointExchangeRates = "exchange_rates"
+	endpointInterestRates = "interest_rates"
+	endpointStatistics    = "statistics"
+)
+
+// endpointPatterns maps endpoint keys to URL path substrings.
+var endpointPatterns = map[string][]string{
+	endpointOthers: {
+		"financial-institutions-holidays",
+	},
+	endpointExchangeRates: {
+		"Stat-ExchangeRate",
+		"Stat-ReferenceRate",
+		"Stat-SpotRate",
+		"Stat-SwapPoint",
+		"Stat-ThaiBahtImpliedInterestRate",
+	},
+	endpointInterestRates: {
+		"PolicyRate",
+		"BIBOR",
+		"DepositRate",
+		"LoanRate",
+		"Stat-InterbankTransactionRate",
+	},
+	endpointStatistics: {
+		"categorylist",
+		"serieslist",
+		"observations",
+		"search-series",
+	},
+}
+
 type Client struct {
 	httpClient       *http.Client
 	baseURL          string
 	appID            string
 	token            string
+	tokens           map[string]string
 	configPath       string
 	rateLimiter      RateLimiter
 	endpointLimiters map[string]RateLimiter
@@ -40,29 +76,20 @@ func NewClient(options ...Option) (*Client, error) {
 		opt(client)
 	}
 
-	if client.token == "" {
-		if err := client.loadConfig(); err != nil {
+	if client.token == "" && client.tokens == nil {
+		if token := os.Getenv("BOT_API_TOKEN"); token != "" {
+			client.token = token
+		} else if err := client.loadConfig(); err != nil {
 			return nil, fmt.Errorf("failed to load credentials: %w", err)
 		}
 	}
 
 	if client.rateLimiter == nil && client.endpointLimiters == nil {
 		client.endpointLimiters = map[string]RateLimiter{
-			"financial-institutions-holidays": NewRateLimiterForHolidays(),
-			"Stat-ExchangeRate":               NewRateLimiterForExchangeRates(),
-			"Stat-ReferenceRate":              NewRateLimiterForExchangeRates(),
-			"Stat-SpotRate":                   NewRateLimiterForExchangeRates(),
-			"Stat-SwapPoint":                  NewRateLimiterForExchangeRates(),
-			"Stat-ThaiBahtImpliedInterestRate": NewRateLimiterForExchangeRates(),
-			"PolicyRate":                      NewRateLimiterForInterestRates(),
-			"BIBOR":                           NewRateLimiterForInterestRates(),
-			"DepositRate":                     NewRateLimiterForInterestRates(),
-			"LoanRate":                        NewRateLimiterForInterestRates(),
-			"Stat-InterbankTransactionRate":   NewRateLimiterForInterestRates(),
-			"categorylist":                    NewRateLimiterForStatistics(),
-			"serieslist":                      NewRateLimiterForStatistics(),
-			"observations":                    NewRateLimiterForStatistics(),
-			"search-series":                   NewRateLimiterForStatistics(),
+			endpointOthers:        NewRateLimiterForHolidays(),
+			endpointExchangeRates: NewRateLimiterForExchangeRates(),
+			endpointInterestRates: NewRateLimiterForInterestRates(),
+			endpointStatistics:    NewRateLimiterForStatistics(),
 		}
 	}
 
@@ -74,33 +101,90 @@ func NewClient(options ...Option) (*Client, error) {
 }
 
 func (c *Client) loadConfig() error {
-	token := os.Getenv("BOT_API_TOKEN")
-
-	if token != "" {
-		c.token = token
-		return nil
-	}
-
 	data, err := os.ReadFile(c.configPath)
 	if err != nil {
-		return fmt.Errorf("no credentials found: set BOT_API_TOKEN env var or create %s: %w", c.configPath, err)
+		return fmt.Errorf("no credentials found: create %s: %w", c.configPath, err)
 	}
 
 	var cfg struct {
-		AppID string `json:"app_id"`
-		Token string `json:"token"`
+		AppID  string            `json:"app_id"`
+		Token  string            `json:"token"`
+		Tokens map[string]string `json:"tokens"`
 	}
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
-	if cfg.Token == "" {
-		return fmt.Errorf("config missing token")
+	if len(cfg.Tokens) > 0 {
+		c.tokens = cfg.Tokens
+		c.token = cfg.Token
+		c.appID = cfg.AppID
+		return nil
 	}
 
-	c.appID = cfg.AppID
-	c.token = cfg.Token
-	return nil
+	if cfg.Token != "" {
+		c.token = cfg.Token
+		c.appID = cfg.AppID
+		return nil
+	}
+
+	return fmt.Errorf("config missing tokens map or token field")
+}
+
+// endpointKeyForURL returns the endpoint key (others, exchange_rates, etc.)
+// that matches the given URL path, or "" if no match.
+func endpointKeyForURL(urlStr string) string {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return ""
+	}
+	path := u.Path
+	if path == "" {
+		path = u.Host
+	}
+	pathLower := strings.ToLower(path)
+	for key, patterns := range endpointPatterns {
+		for _, p := range patterns {
+			if strings.Contains(pathLower, strings.ToLower(p)) {
+				return key
+			}
+		}
+	}
+	return ""
+}
+
+// tokenForURL returns the token to use for the given URL.
+// It prefers a per-endpoint token from the tokens map, falling back to the
+// default token set via WithToken.
+func (c *Client) tokenForURL(urlStr string) string {
+	if key := endpointKeyForURL(urlStr); key != "" {
+		if t, ok := c.tokens[key]; ok && t != "" {
+			return t
+		}
+	}
+	return c.token
+}
+
+// HasEndpointToken reports whether a per-endpoint token is configured for the
+// given endpoint key (e.g. "exchange_rates", "interest_rates").
+func (c *Client) HasEndpointToken(endpoint string) bool {
+	if c.tokens == nil {
+		return false
+	}
+	t, ok := c.tokens[endpoint]
+	return ok && t != ""
+}
+
+// EndpointTokenKeys returns the configured per-endpoint token keys.
+func (c *Client) EndpointTokenKeys() []string {
+	if c.tokens == nil {
+		return nil
+	}
+	keys := make([]string, 0, len(c.tokens))
+	for k := range c.tokens {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 func (c *Client) buildRequest(ctx context.Context, method, urlStr string, body io.Reader) (*http.Request, error) {
@@ -109,7 +193,12 @@ func (c *Client) buildRequest(ctx context.Context, method, urlStr string, body i
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", c.token)
+	token := c.tokenForURL(urlStr)
+	if token == "" {
+		return nil, fmt.Errorf("no token available for %s", urlStr)
+	}
+
+	req.Header.Set("Authorization", token)
 	req.Header.Set("Accept", "application/json")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -183,19 +272,12 @@ func (c *Client) rateLimiterForURL(urlStr string) RateLimiter {
 	if c.rateLimiter != nil {
 		return c.rateLimiter
 	}
-	u, err := url.Parse(urlStr)
-	if err != nil {
+	key := endpointKeyForURL(urlStr)
+	if key == "" {
 		return nil
 	}
-	path := u.Path
-	if path == "" {
-		path = u.Host
-	}
-	pathLower := strings.ToLower(path)
-	for key, limiter := range c.endpointLimiters {
-		if strings.Contains(pathLower, strings.ToLower(key)) {
-			return limiter
-		}
+	if limiter, ok := c.endpointLimiters[key]; ok {
+		return limiter
 	}
 	return nil
 }

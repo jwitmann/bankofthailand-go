@@ -1,4 +1,9 @@
 {
   "app_id": "your-app-id-here",
-  "token": "your-static-token-here"
+  "tokens": {
+    "others": "your-others-token-here",
+    "exchange_rates": "your-exchange-rates-token-here",
+    "interest_rates": "your-interest-rates-token-here",
+    "statistics": "your-statistics-token-here"
+  }
 }

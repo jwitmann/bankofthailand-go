@@ -2,7 +2,6 @@ package bankofthailand
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 )
@@ -126,17 +125,10 @@ type InterbankTransactionRateData struct {
 }
 
 func (c *Client) GetPolicyRate(ctx context.Context) (*PolicyRateResponse, error) {
-	resp, err := c.GetURL(ctx, policyRateBaseURL+"/")
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result PolicyRateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode policy rate response: %w", err)
+	if err := c.requestJSON(ctx, policyRateBaseURL, "/", nil, &result); err != nil {
+		return nil, fmt.Errorf("failed to get policy rate: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -148,20 +140,10 @@ func (c *Client) GetBIBOR(ctx context.Context, startPeriod, endPeriod, bank stri
 		query.Set("bank", bank)
 	}
 
-	u, _ := url.Parse(biborBaseURL + "/bibor_rate/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result BIBORResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode BIBOR response: %w", err)
+	if err := c.requestJSON(ctx, biborBaseURL, "/bibor_rate/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get BIBOR: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -170,20 +152,10 @@ func (c *Client) GetBIBORAverage(ctx context.Context, startPeriod, endPeriod str
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	u, _ := url.Parse(biborBaseURL + "/bibor_avg_rate/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result BIBORResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode BIBOR avg response: %w", err)
+	if err := c.requestJSON(ctx, biborBaseURL, "/bibor_avg_rate/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get BIBOR average: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -192,20 +164,10 @@ func (c *Client) GetDepositRate(ctx context.Context, startPeriod, endPeriod stri
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	u, _ := url.Parse(depositRateBaseURL + "/deposit_rate/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result DepositRateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode deposit rate response: %w", err)
+	if err := c.requestJSON(ctx, depositRateBaseURL, "/deposit_rate/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get deposit rate: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -214,20 +176,10 @@ func (c *Client) GetLoanRate(ctx context.Context, startPeriod, endPeriod string)
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	u, _ := url.Parse(loanRateBaseURL + "/loan_rate/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result LoanRateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode loan rate response: %w", err)
+	if err := c.requestJSON(ctx, loanRateBaseURL, "/loan_rate/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get loan rate: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -239,19 +191,9 @@ func (c *Client) GetInterbankTransactionRate(ctx context.Context, startPeriod, e
 		query.Set("term_type", termType)
 	}
 
-	u, _ := url.Parse(interbankTransactionBaseURL + "/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result InterbankTransactionRateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode interbank transaction rate response: %w", err)
+	if err := c.requestJSON(ctx, interbankTransactionBaseURL, "/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get interbank transaction rate: %w", err)
 	}
-
 	return &result, nil
 }

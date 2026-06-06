@@ -2,7 +2,6 @@ package bankofthailand
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 )
@@ -135,20 +134,10 @@ func (c *Client) GetDailyAverageExchangeRate(ctx context.Context, startPeriod, e
 		query.Set("currency", currency)
 	}
 
-	u, _ := url.Parse(exchangeRateBaseURL + "/DAILY_AVG_EXG_RATE/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result ExchangeRateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode exchange rate response: %w", err)
+	if err := c.requestJSON(ctx, exchangeRateBaseURL, "/DAILY_AVG_EXG_RATE/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get exchange rate: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -157,20 +146,10 @@ func (c *Client) GetDailyReferenceRate(ctx context.Context, startPeriod, endPeri
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	u, _ := url.Parse(referenceRateBaseURL + "/DAILY_REF_RATE/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result ReferenceRateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode reference rate response: %w", err)
+	if err := c.requestJSON(ctx, referenceRateBaseURL, "/DAILY_REF_RATE/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get reference rate: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -179,20 +158,10 @@ func (c *Client) GetSpotRate(ctx context.Context, startPeriod, endPeriod string)
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	u, _ := url.Parse(spotRateBaseURL + "/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result SpotRateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode spot rate response: %w", err)
+	if err := c.requestJSON(ctx, spotRateBaseURL, "/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get spot rate: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -204,20 +173,10 @@ func (c *Client) GetSwapPoint(ctx context.Context, startPeriod, endPeriod, termT
 		query.Set("term_type", termType)
 	}
 
-	u, _ := url.Parse(swapPointBaseURL + "/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result SwapPointResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode swap point response: %w", err)
+	if err := c.requestJSON(ctx, swapPointBaseURL, "/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get swap point: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -229,19 +188,9 @@ func (c *Client) GetImpliedInterestRate(ctx context.Context, startPeriod, endPer
 		query.Set("rate_type", rateType)
 	}
 
-	u, _ := url.Parse(impliedRateBaseURL + "/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result ImpliedRateResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode implied rate response: %w", err)
+	if err := c.requestJSON(ctx, impliedRateBaseURL, "/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get implied rate: %w", err)
 	}
-
 	return &result, nil
 }

@@ -2,7 +2,6 @@ package bankofthailand
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -13,17 +12,10 @@ func (c *Client) GetHolidays(ctx context.Context, year int) ([]Holiday, error) {
 	query := url.Values{}
 	query.Set("year", strconv.Itoa(year))
 
-	resp, err := c.Get(ctx, "/", query)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result HolidaysResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode holidays response: %w", err)
+	if err := c.requestJSONBase(ctx, "/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get holidays: %w", err)
 	}
-
 	return result.Result.Data, nil
 }
 

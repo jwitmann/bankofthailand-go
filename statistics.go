@@ -2,7 +2,6 @@ package bankofthailand
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 )
@@ -103,17 +102,10 @@ type SeriesDetail struct {
 }
 
 func (c *Client) GetCategoryList(ctx context.Context) (*CategoryListResponse, error) {
-	resp, err := c.GetURL(ctx, categoryListBaseURL+"/category_list/")
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result CategoryListResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode category list response: %w", err)
+	if err := c.requestJSON(ctx, categoryListBaseURL, "/category_list/", nil, &result); err != nil {
+		return nil, fmt.Errorf("failed to get category list: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -121,20 +113,10 @@ func (c *Client) GetSeriesList(ctx context.Context, category string) (*SeriesLis
 	query := url.Values{}
 	query.Set("category", category)
 
-	u, _ := url.Parse(categoryListBaseURL + "/series_list/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result SeriesListResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode series list response: %w", err)
+	if err := c.requestJSON(ctx, categoryListBaseURL, "/series_list/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get series list: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -149,20 +131,10 @@ func (c *Client) GetObservations(ctx context.Context, seriesCode, startPeriod, e
 		query.Set("sort_by", sortBy)
 	}
 
-	u, _ := url.Parse(observationsBaseURL + "/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result ObservationsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode observations response: %w", err)
+	if err := c.requestJSON(ctx, observationsBaseURL, "/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to get observations: %w", err)
 	}
-
 	return &result, nil
 }
 
@@ -170,19 +142,9 @@ func (c *Client) SearchSeries(ctx context.Context, keyword string) (*SearchRespo
 	query := url.Values{}
 	query.Set("keyword", keyword)
 
-	u, _ := url.Parse(searchBaseURL + "/")
-	u.RawQuery = query.Encode()
-
-	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	var result SearchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode search response: %w", err)
+	if err := c.requestJSON(ctx, searchBaseURL, "/", query, &result); err != nil {
+		return nil, fmt.Errorf("failed to search series: %w", err)
 	}
-
 	return &result, nil
 }

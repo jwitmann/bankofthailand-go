@@ -129,6 +129,31 @@ func (c *Client) GetURL(ctx context.Context, urlStr string) (*http.Response, err
 	return c.do(req)
 }
 
+func (c *Client) requestJSON(ctx context.Context, baseURL, path string, query url.Values, result interface{}) error {
+	u, _ := url.Parse(baseURL + path)
+	if query != nil {
+		u.RawQuery = query.Encode()
+	}
+
+	resp, err := c.GetURL(ctx, u.String())
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return json.NewDecoder(resp.Body).Decode(result)
+}
+
+func (c *Client) requestJSONBase(ctx context.Context, path string, query url.Values, result interface{}) error {
+	resp, err := c.Get(ctx, path, query)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return json.NewDecoder(resp.Body).Decode(result)
+}
+
 func (c *Client) do(req *http.Request) (*http.Response, error) {
 	if c.rateLimiter != nil {
 		if err := c.rateLimiter.Wait(req.Context()); err != nil {

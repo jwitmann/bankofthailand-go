@@ -45,7 +45,7 @@ func NewClient(options ...Option) (*Client, error) {
 	}
 
 	if client.rateLimiter == nil {
-		client.rateLimiter = NewTokenBucketRateLimiter(5, 1)
+		client.rateLimiter = NewRateLimiterForHolidays()
 	}
 
 	if client.retryPolicy == nil {

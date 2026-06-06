@@ -201,3 +201,61 @@ func TestParseHolidayYear(t *testing.T) {
 		})
 	}
 }
+
+func TestGetRateLimitInfo(t *testing.T) {
+	tests := []struct {
+		endpoint string
+		want     RateLimitInfo
+	}{
+		{"holidays", RateLimitInfo{CallsPerHour: 100, Quota: "unlimited"}},
+		{"exchange_rates", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"reference_rate", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"spot_rate", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"swap_point", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"implied_rate", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"policy_rate", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"bibor", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"deposit_rate", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"loan_rate", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"interbank_rate", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"category_list", RateLimitInfo{CallsPerHour: 2000, Quota: "unlimited"}},
+		{"series_list", RateLimitInfo{CallsPerHour: 2000, Quota: "unlimited"}},
+		{"observations", RateLimitInfo{CallsPerHour: 2000, Quota: "unlimited"}},
+		{"search", RateLimitInfo{CallsPerHour: 2000, Quota: "unlimited"}},
+		{"unknown", RateLimitInfo{CallsPerHour: 100, Quota: "unlimited"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.endpoint, func(t *testing.T) {
+			got := GetRateLimitInfo(tt.endpoint)
+			if got.CallsPerHour != tt.want.CallsPerHour {
+				t.Errorf("GetRateLimitInfo(%q).CallsPerHour = %d, want %d", tt.endpoint, got.CallsPerHour, tt.want.CallsPerHour)
+			}
+			if got.Quota != tt.want.Quota {
+				t.Errorf("GetRateLimitInfo(%q).Quota = %s, want %s", tt.endpoint, got.Quota, tt.want.Quota)
+			}
+		})
+	}
+}
+
+func TestHourlyRateLimiter(t *testing.T) {
+	limiter := NewHourlyRateLimiter(100)
+	ctx := context.Background()
+
+	if err := limiter.Wait(ctx); err != nil {
+		t.Fatalf("first wait failed: %v", err)
+	}
+
+	start := time.Now()
+	if err := limiter.Wait(ctx); err != nil {
+		t.Fatalf("second wait failed: %v", err)
+	}
+	elapsed := time.Since(start)
+
+	if elapsed < 30*time.Second {
+		t.Errorf("expected at least 30s delay for 100/hour limiter, got %v", elapsed)
+	}
+	if elapsed > 45*time.Second {
+		t.Errorf("expected at most 45s delay for 100/hour limiter, got %v", elapsed)
+	}
+}

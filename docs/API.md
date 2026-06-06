@@ -28,18 +28,23 @@ client, err := bot.NewClient(options...)
 
 | Option | Description |
 |--------|-------------|
-| `WithToken(token)` | Set API token directly |
+| `WithToken(token)` | Set single API token for all endpoints |
 | `WithHTTPClient(client)` | Use custom `*http.Client` |
 | `WithBaseURL(url)` | Override base URL (for testing) |
-| `WithRateLimiter(limiter)` | Set custom rate limiter |
+| `WithRateLimiter(limiter)` | Override all endpoint limiters with one |
 | `WithRetryPolicy(policy)` | Set custom retry policy |
 | `WithTimeout(duration)` | Set HTTP timeout |
 | `WithConfigPath(path)` | Set config file path |
 
 ### Default Behavior
 
-- Loads token from `BOT_API_TOKEN` env var or `config/bot-keys.json`
-- Rate limiter: 100 calls/hour (holidays default)
+- Loads credentials from `BOT_API_TOKEN` env var or `config/bot-keys.json`
+- Supports per-endpoint tokens via `tokens` map in config
+- Automatically selects rate limiter based on endpoint URL:
+  - Holidays: 100 calls/hour
+  - Exchange Rates: 200 calls/hour
+  - Interest Rates: 200 calls/hour
+  - Statistics: 2000 calls/hour
 - HTTP timeout: 30 seconds
 - Retry: 3 retries with exponential backoff on 5xx errors
 
@@ -47,17 +52,34 @@ client, err := bot.NewClient(options...)
 
 ## Authentication
 
-The client supports two authentication methods:
+The client supports three authentication methods:
 
-### Environment Variable
+### Per-Endpoint Tokens (Recommended)
 
-```bash
-export BOT_API_TOKEN="your-api-token"
+Create `config/bot-keys.json` with separate tokens per service:
+
+```json
+{
+  "app_id": "your-app-id",
+  "tokens": {
+    "others": "your-holidays-token",
+    "exchange_rates": "your-exchange-rates-token",
+    "interest_rates": "your-interest-rates-token",
+    "statistics": "your-statistics-token"
+  }
+}
 ```
 
-### Config File
+The client automatically selects the appropriate token based on the endpoint URL:
 
-Create `config/bot-keys.json`:
+| Endpoint Key | Matching URL Patterns |
+|-------------|----------------------|
+| `others` | `financial-institutions-holidays` |
+| `exchange_rates` | `Stat-ExchangeRate`, `Stat-ReferenceRate`, `Stat-SpotRate`, `Stat-SwapPoint`, `Stat-ThaiBahtImpliedInterestRate` |
+| `interest_rates` | `PolicyRate`, `BIBOR`, `DepositRate`, `LoanRate`, `Stat-InterbankTransactionRate` |
+| `statistics` | `categorylist`, `serieslist`, `observations`, `search-series` |
+
+### Single Token
 
 ```json
 {
@@ -66,44 +88,57 @@ Create `config/bot-keys.json`:
 }
 ```
 
+### Environment Variable
+
+```bash
+export BOT_API_TOKEN="your-api-token"
+```
+
 The token is sent as an `Authorization` header on every request:
 
 ```
 Authorization: your-api-token
 ```
 
+### Token Inspection
+
+```go
+// Check if a per-endpoint token is configured
+if client.HasEndpointToken("exchange_rates") {
+    // Uses separate token for exchange rate APIs
+}
+
+// List configured endpoint token keys
+keys := client.EndpointTokenKeys()
+```
+
 ---
 
 ## Rate Limiting
 
-Built-in token bucket rate limiter with per-API limits:
+Built-in token bucket rate limiter with **automatic per-API selection**:
 
 ### Limits
 
-| Endpoint Category | Calls/Hour | Quota |
-|------------------|-----------|-------|
-| Holidays | 100 | unlimited |
-| Exchange Rates | 200 | unlimited |
-| Interest Rates | 200 | unlimited |
-| Statistics | 2000 | unlimited |
+| Endpoint Category | Calls/Hour | Matching Endpoints |
+|------------------|-----------|-------------------|
+| Holidays | 100 | `GetHolidays`, `GetHolidaysRaw` |
+| Exchange Rates | 200 | `GetDailyAverageExchangeRate`, `GetDailyReferenceRate`, `GetSpotRate`, `GetSwapPoint`, `GetImpliedInterestRate` |
+| Interest Rates | 200 | `GetPolicyRate`, `GetBIBOR`, `GetDepositRate`, `GetLoanRate`, `GetInterbankTransactionRate` |
+| Statistics | 2000 | `GetCategoryList`, `GetSeriesList`, `GetObservations`, `SearchSeries` |
 
 ### Usage
 
 ```go
-// Use default limiter (100/hour)
+// Default: automatic per-endpoint rate limiting
 client, _ := bot.NewClient()
 
-// Use category-specific limiter
-client, _ := bot.NewClient(
-    bot.WithRateLimiter(bot.NewRateLimiterForExchangeRates()), // 200/hour
-)
-
-// Custom limit
+// Override with a single limiter for all endpoints
 client, _ := bot.NewClient(
     bot.WithRateLimiter(bot.NewHourlyRateLimiter(500)),
 )
 
-// Disable limiter
+// Disable limiting
 client, _ := bot.NewClient(
     bot.WithRateLimiter(&bot.NoOpRateLimiter{}),
 )
@@ -111,6 +146,13 @@ client, _ := bot.NewClient(
 // Query limits
 info := bot.GetRateLimitInfo("statistics")
 fmt.Printf("%d calls/hour, %s quota\n", info.CallsPerHour, info.Quota)
+```
+
+### Custom Limiter
+
+```go
+limiter := bot.NewHourlyRateLimiter(1000) // 1000 calls/hour
+client, _ := bot.NewClient(bot.WithRateLimiter(limiter))
 ```
 
 ---
@@ -153,6 +195,11 @@ All API errors return `*APIError`:
 ```go
 resp, err := client.GetHolidays(ctx, 2026)
 if err != nil {
+    if errors.Is(err, bot.ErrNoContent) {
+        // HTTP 204 — data not yet available
+        fmt.Println("Data not yet available for this period")
+        return
+    }
     var apiErr *bot.APIError
     if errors.As(err, &apiErr) {
         fmt.Printf("API Error: status=%d, message=%s\n",
@@ -161,13 +208,19 @@ if err != nil {
 }
 ```
 
+**Error Types:**
+
+| Error | Description |
+|-------|-------------|
+| `*APIError` | HTTP 4xx/5xx errors |
+| `ErrNoContent` | HTTP 204 — requested data not yet available |
+
 **APIError Fields:**
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `StatusCode` | `int` | HTTP status code |
 | `Message` | `string` | Response body or status text |
-| `URL` | `string` | Request URL |
 
 ---
 
@@ -208,6 +261,39 @@ for _, h := range holidays {
 // Output:
 // 2026-01-01: New Year's Day
 // 2026-04-13: Songkran Festival
+```
+
+### GetHolidaysRaw
+
+```go
+func (c *Client) GetHolidaysRaw(ctx context.Context, year int) (*HolidaysResponse, error)
+```
+
+Fetch holidays with the full API response wrapper (includes `api` name and `timestamp`).
+
+**Response:** `*HolidaysResponse`
+
+```go
+type HolidaysResult struct {
+    API       string    `json:"api"`       // "API_V2.FIHolidays"
+    Timestamp string    `json:"timestamp"` // "2026-06-06 10:30:15"
+    Data      []Holiday `json:"data"`
+}
+```
+
+**Example:**
+
+```go
+resp, err := client.GetHolidaysRaw(ctx, 2026)
+if err != nil {
+    if errors.Is(err, bot.ErrNoContent) {
+        fmt.Println("Holiday data not yet available for 2026")
+        return
+    }
+    log.Fatal(err)
+}
+fmt.Printf("API: %s, Timestamp: %s, Holidays: %d\n",
+    resp.Result.API, resp.Result.Timestamp, len(resp.Result.Data))
 ```
 
 ---
@@ -596,6 +682,7 @@ type DataHeader struct {
 | Method | Return Type | Base URL |
 |--------|-------------|----------|
 | `GetHolidays` | `[]Holiday` | `gateway.api.bot.or.th/financial-institutions-holidays` |
+| `GetHolidaysRaw` | `*HolidaysResponse` | `gateway.api.bot.or.th/financial-institutions-holidays` |
 | `GetDailyAverageExchangeRate` | `*ExchangeRateResponse` | `gateway.api.bot.or.th/Stat-ExchangeRate/v2` |
 | `GetDailyReferenceRate` | `*ReferenceRateResponse` | `gateway.api.bot.or.th/Stat-ReferenceRate/v2` |
 | `GetSpotRate` | `*SpotRateResponse` | `gateway.api.bot.or.th/Stat-SpotRate/v2/SPOTRATE` |

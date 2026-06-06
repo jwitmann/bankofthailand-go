@@ -13,7 +13,8 @@ Official Go client for [Bank of Thailand (BOT) Public APIs](https://bot-public-a
 - **Exchange Rates** — Daily/monthly/quarterly/annual THB/FX rates
 - **Interest Rates** — Policy rate, BIBOR, deposit/loan rates
 - **Economic Statistics** — Time-series observations, category search
-- **Rate Limiting** — Built-in token bucket with per-API limits
+- **Per-Endpoint Authentication** — Different API tokens per service category
+- **Path-Aware Rate Limiting** — Automatic rate limit selection by endpoint
 - **Retry Logic** — Exponential backoff with configurable status codes
 - **CLI Tool** — `bot-holidays` command-line utility
 
@@ -27,7 +28,21 @@ go get github.com/jwitmann/bankofthailand-go
 
 ### Authentication
 
-Create `config/bot-keys.json`:
+Create `config/bot-keys.json` with per-endpoint tokens:
+
+```json
+{
+  "app_id": "your-app-id",
+  "tokens": {
+    "others": "your-holidays-token",
+    "exchange_rates": "your-exchange-rates-token",
+    "interest_rates": "your-interest-rates-token",
+    "statistics": "your-statistics-token"
+  }
+}
+```
+
+Or use a single token for all endpoints:
 
 ```json
 {
@@ -41,6 +56,8 @@ Or set the environment variable:
 ```bash
 export BOT_API_TOKEN="your-api-token"
 ```
+
+The client automatically selects the appropriate token based on the endpoint URL.
 
 ### Holidays
 
@@ -112,22 +129,29 @@ obs, err := client.GetObservations(ctx, "PF00000000Q00232", "2017-01-01", "2017-
 
 ## Rate Limits
 
-Per-API rate limits enforced by the client:
+The client automatically applies the correct rate limit based on the endpoint being called:
 
-| API Category | Limit |
-|-------------|-------|
-| Holidays | 100 calls/hour |
-| Exchange Rates | 200 calls/hour |
-| Interest Rates | 200 calls/hour |
-| Statistics | 2000 calls/hour |
+| API Category | Endpoints | Limit |
+|-------------|-----------|-------|
+| Holidays | `GetHolidays`, `GetHolidaysRaw` | 100 calls/hour |
+| Exchange Rates | `GetDailyAverageExchangeRate`, `GetDailyReferenceRate`, `GetSpotRate`, `GetSwapPoint`, `GetImpliedInterestRate` | 200 calls/hour |
+| Interest Rates | `GetPolicyRate`, `GetBIBOR`, `GetDepositRate`, `GetLoanRate`, `GetInterbankTransactionRate` | 200 calls/hour |
+| Statistics | `GetCategoryList`, `GetSeriesList`, `GetObservations`, `SearchSeries` | 2000 calls/hour |
+
+No configuration needed — the client detects the endpoint from the URL and applies the appropriate limiter automatically.
 
 ```go
-// Use a specific rate limiter
+// Override with a single custom limiter for all endpoints
 client, _ := bot.NewClient(
-    bot.WithRateLimiter(bot.NewRateLimiterForExchangeRates()),
+    bot.WithRateLimiter(bot.NewHourlyRateLimiter(500)),
 )
 
-// Or check limits programmatically
+// Disable rate limiting
+client, _ := bot.NewClient(
+    bot.WithRateLimiter(&bot.NoOpRateLimiter{}),
+)
+
+// Query limits programmatically
 info := bot.GetRateLimitInfo("exchange_rates")
 fmt.Printf("Limit: %d calls/hour, Quota: %s\n", info.CallsPerHour, info.Quota)
 ```
@@ -136,20 +160,42 @@ fmt.Printf("Limit: %d calls/hour, Quota: %s\n", info.CallsPerHour, info.Quota)
 
 ```go
 client, _ := bot.NewClient(
-    bot.WithToken("your-token"),                              // Direct token
+    bot.WithToken("your-token"),                              // Single token for all endpoints
     bot.WithHTTPClient(&http.Client{Timeout: 60 * time.Second}), // Custom HTTP client
-    bot.WithRateLimiter(bot.NewHourlyRateLimiter(500)),        // Custom rate limit
+    bot.WithRateLimiter(bot.NewHourlyRateLimiter(500)),        // Override all limiters
     bot.WithRetryPolicy(bot.DefaultRetryPolicy()),              // Custom retry
     bot.WithConfigPath("/path/to/config.json"),                // Custom config path
 )
 ```
 
+## Error Handling
+
+```go
+holidays, err := client.GetHolidays(ctx, 2026)
+if err != nil {
+    if errors.Is(err, bot.ErrNoContent) {
+        // HTTP 204 — data not yet available for this year
+        log.Println("Holiday data not yet available")
+        return
+    }
+    var apiErr *bot.APIError
+    if errors.As(err, &apiErr) {
+        log.Fatalf("API error: status=%d, message=%s", apiErr.StatusCode, apiErr.Message)
+    }
+    log.Fatalf("Request failed: %v", err)
+}
+```
+
 ## CLI
 
 ```bash
-# Holidays
+# Holidays (raw list)
 go run ./cmd/bot-holidays -year 2026
+
+# Holidays (ThaiFA-compatible format with API wrapper)
 go run ./cmd/bot-holidays -year 2026 -format thaifa
+
+# Holidays (CSV)
 go run ./cmd/bot-holidays -year 2026 -format csv
 
 # Install

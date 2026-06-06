@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -18,13 +19,14 @@ const (
 )
 
 type Client struct {
-	httpClient  *http.Client
-	baseURL     string
-	appID       string
-	token       string
-	configPath  string
-	rateLimiter RateLimiter
-	retryPolicy *RetryPolicy
+	httpClient       *http.Client
+	baseURL          string
+	appID            string
+	token            string
+	configPath       string
+	rateLimiter      RateLimiter
+	endpointLimiters map[string]RateLimiter
+	retryPolicy      *RetryPolicy
 }
 
 func NewClient(options ...Option) (*Client, error) {
@@ -44,8 +46,24 @@ func NewClient(options ...Option) (*Client, error) {
 		}
 	}
 
-	if client.rateLimiter == nil {
-		client.rateLimiter = NewRateLimiterForHolidays()
+	if client.rateLimiter == nil && client.endpointLimiters == nil {
+		client.endpointLimiters = map[string]RateLimiter{
+			"financial-institutions-holidays": NewRateLimiterForHolidays(),
+			"Stat-ExchangeRate":               NewRateLimiterForExchangeRates(),
+			"Stat-ReferenceRate":              NewRateLimiterForExchangeRates(),
+			"Stat-SpotRate":                   NewRateLimiterForExchangeRates(),
+			"Stat-SwapPoint":                  NewRateLimiterForExchangeRates(),
+			"Stat-ThaiBahtImpliedInterestRate": NewRateLimiterForExchangeRates(),
+			"PolicyRate":                      NewRateLimiterForInterestRates(),
+			"BIBOR":                           NewRateLimiterForInterestRates(),
+			"DepositRate":                     NewRateLimiterForInterestRates(),
+			"LoanRate":                        NewRateLimiterForInterestRates(),
+			"Stat-InterbankTransactionRate":   NewRateLimiterForInterestRates(),
+			"categorylist":                    NewRateLimiterForStatistics(),
+			"serieslist":                      NewRateLimiterForStatistics(),
+			"observations":                    NewRateLimiterForStatistics(),
+			"search-series":                   NewRateLimiterForStatistics(),
+		}
 	}
 
 	if client.retryPolicy == nil {
@@ -158,9 +176,33 @@ func (c *Client) requestJSONBase(ctx context.Context, path string, query url.Val
 	return json.NewDecoder(resp.Body).Decode(result)
 }
 
-func (c *Client) do(req *http.Request) (*http.Response, error) {
+// rateLimiterForURL returns the appropriate rate limiter for the given URL.
+// If a custom rateLimiter was set via WithRateLimiter, that takes precedence.
+// Otherwise, it selects based on the API path segment.
+func (c *Client) rateLimiterForURL(urlStr string) RateLimiter {
 	if c.rateLimiter != nil {
-		if err := c.rateLimiter.Wait(req.Context()); err != nil {
+		return c.rateLimiter
+	}
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return nil
+	}
+	path := u.Path
+	if path == "" {
+		path = u.Host
+	}
+	pathLower := strings.ToLower(path)
+	for key, limiter := range c.endpointLimiters {
+		if strings.Contains(pathLower, strings.ToLower(key)) {
+			return limiter
+		}
+	}
+	return nil
+}
+
+func (c *Client) do(req *http.Request) (*http.Response, error) {
+	if limiter := c.rateLimiterForURL(req.URL.String()); limiter != nil {
+		if err := limiter.Wait(req.Context()); err != nil {
 			return nil, fmt.Errorf("rate limiter: %w", err)
 		}
 	}

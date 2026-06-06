@@ -85,17 +85,8 @@ func (c *Client) loadConfig() error {
 	return nil
 }
 
-func (c *Client) newRequest(ctx context.Context, method, path string, query url.Values, body io.Reader) (*http.Request, error) {
-	u, err := url.Parse(c.baseURL + path)
-	if err != nil {
-		return nil, fmt.Errorf("invalid url: %w", err)
-	}
-
-	if query != nil {
-		u.RawQuery = query.Encode()
-	}
-
-	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
+func (c *Client) buildRequest(ctx context.Context, method, urlStr string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, urlStr, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -107,6 +98,35 @@ func (c *Client) newRequest(ctx context.Context, method, path string, query url.
 	}
 
 	return req, nil
+}
+
+func (c *Client) newRequest(ctx context.Context, method, path string, query url.Values, body io.Reader) (*http.Request, error) {
+	u, err := url.Parse(c.baseURL + path)
+	if err != nil {
+		return nil, fmt.Errorf("invalid url: %w", err)
+	}
+
+	if query != nil {
+		u.RawQuery = query.Encode()
+	}
+
+	return c.buildRequest(ctx, method, u.String(), body)
+}
+
+func (c *Client) Get(ctx context.Context, path string, query url.Values) (*http.Response, error) {
+	req, err := c.newRequest(ctx, http.MethodGet, path, query, nil)
+	if err != nil {
+		return nil, err
+	}
+	return c.do(req)
+}
+
+func (c *Client) GetURL(ctx context.Context, urlStr string) (*http.Response, error) {
+	req, err := c.buildRequest(ctx, http.MethodGet, urlStr, nil)
+	if err != nil {
+		return nil, err
+	}
+	return c.do(req)
 }
 
 func (c *Client) do(req *http.Request) (*http.Response, error) {
@@ -153,12 +173,4 @@ func (c *Client) do(req *http.Request) (*http.Response, error) {
 	}
 
 	return resp, nil
-}
-
-func (c *Client) Get(ctx context.Context, path string, query url.Values) (*http.Response, error) {
-	req, err := c.newRequest(ctx, http.MethodGet, path, query, nil)
-	if err != nil {
-		return nil, err
-	}
-	return c.do(req)
 }

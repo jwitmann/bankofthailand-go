@@ -1,0 +1,6 @@
+/config/bot-keys.json
+/bot-holidays
+*.exe
+*.test
+*.out
+/vendor/

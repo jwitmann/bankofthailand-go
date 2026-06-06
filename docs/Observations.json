@@ -1,0 +1,222 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Observations",
+    "description": "บริการข้อมูล BOT API ในกลุ่มสถิติ ประกอบด้วย สถิติเศรษฐกิจการเงิน สถิติสถาบันการเงิน สถิติตลาดการเงิน และสถิติระบบการชำระเงิน ซึ่งเป็นข้อมูลที่ ธปท. เผยแพร่บน BOT Website ผู้ใช้บริการสามารถเลือกข้อมูลที่ต้องการ (Observations) โดยระบุ series code ซึ่งสามารถ Download ได้จาก List of Statistics APIs ท้ายนี้ \n \nThe BOT API products on Statistics include economic and financial, financial Institutions, financial market and payment systems statistics, all of which are published on the BOT Website. Users can filter observations by series code, downloadable from List of Statistics APIs below.\n\n\n\nDownload API list Document [click](https://www.bot.or.th/content/dam/bot/documents/th/statistics/api-service/API_Statistic_time_series.xlsx)",
+    "contact": {
+      "name": ""
+    },
+    "version": "1.0.3",
+    "x-ibm-name": "observations"
+  },
+  "servers": [
+    {
+      "url": "https://gateway.api.bot.or.th/observations"
+    }
+  ],
+  "security": [
+    {
+      "clientIdHeader": []
+    }
+  ],
+  "tags": [],
+  "paths": {
+    "/": {
+      "get": {
+        "parameters": [
+          {
+            "name": "series_code",
+            "in": "query",
+            "description": "The code for series",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_period",
+            "in": "query",
+            "description": "start period: format (YYYY-MM-DD)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end_period",
+            "in": "query",
+            "description": "end period: format (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "description": "sort data (asc, desc)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 OK",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response%20Parameters"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response%20Parameters"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Response Parameters": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "api": {
+                "type": "string",
+                "example": "Bank of Thailand Statistics"
+              },
+              "timestamp": {
+                "type": "string",
+                "example": "2018-07-23 15:53:34"
+              },
+              "series": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "series_code": {
+                      "type": "string",
+                      "example": "PF00000000Q00232"
+                    },
+                    "series_name_th": {
+                      "type": "string",
+                      "example": "FSIs ยอดรวมตราสารหนี้"
+                    },
+                    "series_name_eng": {
+                      "type": "string",
+                      "example": "Government debt securities_Total"
+                    },
+                    "unit_th": {
+                      "type": "string",
+                      "example": "ล้านบาท"
+                    },
+                    "unit_eng": {
+                      "type": "string",
+                      "example": "Millions of Baht"
+                    },
+                    "series_type": {
+                      "type": "string",
+                      "example": "Stock"
+                    },
+                    "frequency": {
+                      "type": "string",
+                      "example": "Quarterly"
+                    },
+                    "last_update_date": {
+                      "type": "string",
+                      "example": "2018-04-30"
+                    },
+                    "observations": {
+                      "type": "object",
+                      "properties": {
+                        "period_start": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "example": [
+                        {
+                          "period_start": "2017-Q1",
+                          "value": "8648519.0000000"
+                        },
+                        {
+                          "period_start": "2017-Q2",
+                          "value": "8472552.0000000"
+                        },
+                        {
+                          "period_start": "2017-Q3",
+                          "value": "8454779.0000000"
+                        },
+                        {
+                          "period_start": "2017-Q4",
+                          "value": "8690422.0000000"
+                        },
+                        {
+                          "period_start": "2018-Q1",
+                          "value": "8722207.0000000"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": ""
+      }
+    },
+    "parameters": {
+      "series_code": {
+        "name": "series_code",
+        "in": "query",
+        "description": "The code for series",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "start_period": {
+        "name": "start_period",
+        "in": "query",
+        "description": "start period: format (YYYY-MM-DD)",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "end_period": {
+        "name": "end_period",
+        "in": "query",
+        "description": "end period: format (YYYY-MM-DD)",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "sort_by": {
+        "name": "sort_by",
+        "in": "query",
+        "description": "sort data (asc, desc)",
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "clientIdHeader": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "x-original-swagger-version": "2.0"
+}

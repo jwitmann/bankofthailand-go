@@ -1,0 +1,193 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Stat Category",
+    "version": "1.0.0",
+    "x-ibm-name": "stat-category"
+  },
+  "servers": [
+    {
+      "url": "https://gateway.api.bot.or.th/categorylist"
+    }
+  ],
+  "security": [
+    {
+      "clientIdHeader": []
+    }
+  ],
+  "tags": [],
+  "paths": {
+    "/category_list/": {
+      "get": {
+        "description": "ผู้ใช้บริการสามารถ Call operation เพื่อเรียกดู Category ข้อมูลที่มีในระบบทั้งหมด โดยระบบจะแสดง Category, Description TH และ ENG เพื่อให้ผู้ใช้บริการนำ Category ที่ต้องการไปค้นหา <br> <br>Series List  Users can call operation to browse all available categories in the system. The system will display the category, description th and description eng in order for users to apply the desired category to search the Series List.",
+        "responses": {
+          "200": {
+            "description": "200 OK",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category%20List%20Response%20Parameters"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category%20List%20Response%20Parameters"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/series_list/": {
+      "get": {
+        "description": "ผู้ใช้บริการสามารถกำหนด Category ข้อมูลที่ต้องการ โดยใส่รหัสของ Category ตัวอย่างเช่น EC_XT_077 โดยระบบจะแสดง list ของ series ทั้งหมดใน Category เพื่อให้ผู้ใช้บริการนำ series list ไปเรียกข้อมูลที่ต้องการใน APIs (Observations)  <br> <br>Users can define the category they want by entering the code of the category, for example EC_XT_077. The system will display a list of all series in the Category so that users can apply the series list to retrieve the required information in APIs (Observations).",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "description": "category for get all series in category",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 OK",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Series%20List%20Response%20Parameters"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Series%20List%20Response%20Parameters"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Category List Response Parameters": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "api": {
+                "type": "string",
+                "example": "CategoryList"
+              },
+              "timestamp": {
+                "type": "string",
+                "example": "2018-12-28T16:07:11.000Z"
+              },
+              "category": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "category": {
+                      "type": "string",
+                      "example": "EC_EI_001_S2"
+                    },
+                    "description_th": {
+                      "type": "string",
+                      "example": "ดัชนีพ้องเศรษฐกิจและองค์ประกอบที่ปรับฤดูกาล"
+                    },
+                    "description_eng": {
+                      "type": "string",
+                      "example": "Coincident Economic Index and Components (Seasonally Adjusted)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": ""
+      },
+      "Series List Response Parameters": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "object",
+            "properties": {
+              "api": {
+                "type": "string",
+                "example": "SeriesInCategory"
+              },
+              "timestamp": {
+                "type": "string",
+                "example": "2018-12-28T16:07:11.000Z"
+              },
+              "series": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "category": {
+                      "type": "string",
+                      "example": "EC_EI_001_S2"
+                    },
+                    "series_code": {
+                      "type": "string",
+                      "example": "EICEIM00001"
+                    },
+                    "series_name_th": {
+                      "type": "string",
+                      "example": "ดัชนีพ้องเศรษฐกิจ"
+                    },
+                    "series_name_eng": {
+                      "type": "string",
+                      "example": "Coincident Economic Index"
+                    },
+                    "observation_start": {
+                      "type": "string",
+                      "example": "2000-01"
+                    },
+                    "observation_end": {
+                      "type": "string",
+                      "example": "2018-07"
+                    },
+                    "last_update_date": {
+                      "type": "string",
+                      "example": "2018-05-31T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": ""
+      }
+    },
+    "parameters": {
+      "category": {
+        "name": "category",
+        "in": "query",
+        "description": "category for get all series in category",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "securitySchemes": {
+      "clientIdHeader": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  },
+  "x-original-swagger-version": "2.0"
+}

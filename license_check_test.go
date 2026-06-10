@@ -9,19 +9,16 @@ import (
 func TestLicenseCheckResponseDecoding(t *testing.T) {
 	jsonData := `{
 		"ResultSet": [
-			{"name": "Test Corp", "licenseType": "P-Loan"},
-			{"name": "Another Co", "licenseType": "e-Money"}
+			{"Id": "1", "AuthorizedName": " ธนาคารออมสิน ", "BranchName": " ธนาคารออมสิน ", "TypeId": "ธนาคารออมสิน", "TypeName": "ธนาคารออมสิน", "LastUpdate": "", "Address": "470 ถนนพหลโยธิน", "Telephone": "0-2299-8000", "DepositFlag": "T", "LoanFlag": "T"}
 		],
 		"ResultSetInfo": {
 			"QueryRecordPerPage": 10,
-			"QueryTotalRecord": 2,
+			"QueryTotalRecord": 1,
 			"QueryCurrentPage": 1
 		},
 		"GroupInfo": [
-			{"TypeCode": "", "TypeNameTH": "ทั้งหมด", "Count": 2},
-			{"TypeCode": "j", "TypeNameTH": "นิติบุคคล", "Count": 2},
-			{"TypeCode": "i", "TypeNameTH": "บุคคล", "Count": 0},
-			{"TypeCode": "b", "TypeNameTH": "สถานประกอบการ", "Count": 0}
+			{"TypeCode": "", "TypeNameTH": "ทั้งหมด", "Count": 1},
+			{"TypeCode": "j", "TypeNameTH": "นิติบุคคล", "Count": 1}
 		]
 	}`
 
@@ -30,20 +27,30 @@ func TestLicenseCheckResponseDecoding(t *testing.T) {
 		t.Fatalf("failed to decode: %v", err)
 	}
 
-	if len(resp.ResultSet) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(resp.ResultSet))
+	if len(resp.ResultSet) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(resp.ResultSet))
 	}
-	if resp.ResultSetInfo.QueryTotalRecord != 2 {
-		t.Errorf("expected total record 2, got %d", resp.ResultSetInfo.QueryTotalRecord)
+	rec := resp.ResultSet[0]
+	if rec.ID != "1" {
+		t.Errorf("expected ID 1, got %s", rec.ID)
+	}
+	if rec.AuthorizedName != " ธนาคารออมสิน " {
+		t.Errorf("unexpected AuthorizedName: %s", rec.AuthorizedName)
+	}
+	if rec.TypeName != "ธนาคารออมสิน" {
+		t.Errorf("unexpected TypeName: %s", rec.TypeName)
+	}
+	if rec.DepositFlag != "T" {
+		t.Errorf("expected DepositFlag T, got %s", rec.DepositFlag)
+	}
+	if resp.ResultSetInfo.QueryTotalRecord != 1 {
+		t.Errorf("expected total record 1, got %d", resp.ResultSetInfo.QueryTotalRecord)
 	}
 	if resp.ResultSetInfo.QueryRecordPerPage != 10 {
 		t.Errorf("expected per page 10, got %d", resp.ResultSetInfo.QueryRecordPerPage)
 	}
-	if resp.ResultSetInfo.QueryCurrentPage != 1 {
-		t.Errorf("expected current page 1, got %d", resp.ResultSetInfo.QueryCurrentPage)
-	}
-	if len(resp.GroupInfo) != 4 {
-		t.Fatalf("expected 4 groups, got %d", len(resp.GroupInfo))
+	if len(resp.GroupInfo) != 2 {
+		t.Fatalf("expected 2 groups, got %d", len(resp.GroupInfo))
 	}
 	if resp.GroupInfo[1].TypeCode != "j" {
 		t.Errorf("expected group type j, got %s", resp.GroupInfo[1].TypeCode)
@@ -51,8 +58,15 @@ func TestLicenseCheckResponseDecoding(t *testing.T) {
 	if resp.GroupInfo[1].TypeNameTH != "นิติบุคคล" {
 		t.Errorf("expected group name นิติบุคคล, got %s", resp.GroupInfo[1].TypeNameTH)
 	}
-	if resp.GroupInfo[1].Count != 2 {
-		t.Errorf("expected group count 2, got %d", resp.GroupInfo[1].Count)
+	if resp.GroupInfo[1].Count != 1 {
+		t.Errorf("expected group count 1, got %d", resp.GroupInfo[1].Count)
+	}
+
+	if rec.TypeNameLocalized(LocaleEnglish) != "Government Savings Bank" {
+		t.Errorf("unexpected English TypeName: %s", rec.TypeNameLocalized(LocaleEnglish))
+	}
+	if rec.TypeNameLocalized(LocaleThai) != "ธนาคารออมสิน" {
+		t.Errorf("unexpected Thai TypeName: %s", rec.TypeNameLocalized(LocaleThai))
 	}
 }
 
@@ -75,8 +89,8 @@ func TestLicenseCheckResponseDecoding_NoResults(t *testing.T) {
 		t.Fatalf("failed to decode: %v", err)
 	}
 
-	if resp.ResultSet != nil {
-		t.Errorf("expected nil ResultSet, got %v", resp.ResultSet)
+	if len(resp.ResultSet) > 0 {
+		t.Errorf("expected empty ResultSet, got %v", resp.ResultSet)
 	}
 	if resp.ResultSetInfo.QueryTotalRecord != 0 {
 		t.Errorf("expected 0 total records, got %d", resp.ResultSetInfo.QueryTotalRecord)

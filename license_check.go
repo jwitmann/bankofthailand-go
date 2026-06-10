@@ -11,9 +11,26 @@ import (
 const licenseCheckBaseURL = "https://gateway.api.bot.or.th/BotLicenseCheckAPI"
 
 type LicenseCheckResponse struct {
-	ResultSet     []map[string]interface{} `json:"ResultSet"`
+	ResultSet     []AuthorizedSearchResult `json:"ResultSet"`
 	ResultSetInfo LicenseResultSetInfo     `json:"ResultSetInfo"`
 	GroupInfo     []LicenseGroupInfo       `json:"GroupInfo"`
+}
+
+type AuthorizedSearchResult struct {
+	ID             string `json:"Id"`
+	AuthorizedName string `json:"AuthorizedName"`
+	BranchName     string `json:"BranchName"`
+	TypeID         string `json:"TypeId"`
+	TypeName       string `json:"TypeName"`
+	LastUpdate     string `json:"LastUpdate"`
+	Address        string `json:"Address"`
+	Telephone      string `json:"Telephone"`
+	DepositFlag    string `json:"DepositFlag"`
+	LoanFlag       string `json:"LoanFlag"`
+}
+
+func (r AuthorizedSearchResult) TypeNameLocalized(loc Locale) string {
+	return pickString(loc, r.TypeName, lookup(r.TypeName, BusinessTypeTranslation))
 }
 
 type LicenseResultSetInfo struct {

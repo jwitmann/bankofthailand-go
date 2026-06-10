@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue.svg)](https://golang.org)
 
-Go client for [Bank of Thailand (BOT) Public APIs](https://bot-public-api.apigee.io/). Zero external dependencies.
+**Complete** Go client for **all** [Bank of Thailand (BOT) Public APIs](https://bot-public-api.apigee.io/). Zero external dependencies. Every published BOT API endpoint is implemented.
 
 ## Features
 
@@ -19,6 +19,8 @@ Go client for [Bank of Thailand (BOT) Public APIs](https://bot-public-api.apigee
 - **Path-Aware Rate Limiting** — Automatic rate limit selection by endpoint
 - **Retry Logic** — Exponential backoff with configurable status codes
 - **CLI Tool** — `bot-holidays` command-line utility
+
+> **Complete API Coverage** — This client implements every published BOT Public API endpoint, including the recently added Debt Securities Auction and License Check catalogues.
 
 ## Installation
 

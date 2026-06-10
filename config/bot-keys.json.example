@@ -4,6 +4,8 @@
     "others": "your-others-token-here",
     "exchange_rates": "your-exchange-rates-token-here",
     "interest_rates": "your-interest-rates-token-here",
-    "statistics": "your-statistics-token-here"
+    "statistics": "your-statistics-token-here",
+    "debt_security_auction": "your-debt-securities-token-here",
+    "license_check": "your-license-check-token-here"
   }
 }

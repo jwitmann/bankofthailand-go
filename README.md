@@ -13,6 +13,8 @@ Go client for [Bank of Thailand (BOT) Public APIs](https://bot-public-api.apigee
 - **Exchange Rates** — Daily/monthly/quarterly/annual THB/FX rates
 - **Interest Rates** — Policy rate, BIBOR, deposit/loan rates
 - **Economic Statistics** — Time-series observations, category search
+- **Debt Securities Auction** — Government bond and SOE bond auction results
+- **License Check** — Search BOT-supervised business licenses (P-Loan, Nano Finance, e-Money)
 - **Per-Endpoint Authentication** — Different API tokens per service category
 - **Path-Aware Rate Limiting** — Automatic rate limit selection by endpoint
 - **Retry Logic** — Exponential backoff with configurable status codes
@@ -37,7 +39,9 @@ Create `config/bot-keys.json` with per-endpoint tokens:
     "others": "your-holidays-token",
     "exchange_rates": "your-exchange-rates-token",
     "interest_rates": "your-interest-rates-token",
-    "statistics": "your-statistics-token"
+    "statistics": "your-statistics-token",
+    "debt_security_auction": "your-debt-securities-token",
+    "license_check": "your-license-check-token"
   }
 }
 ```
@@ -127,6 +131,49 @@ search, err := client.SearchSeries(ctx, "GDP")
 obs, err := client.GetObservations(ctx, "PF00000000Q00232", "2017-01-01", "2017-12-31", "")
 ```
 
+### Debt Securities Auction
+
+```go
+resp, err := client.GetDebtSecuritiesAuction(ctx, "2017-09-01", "2017-09-30")
+if err != nil {
+    log.Fatal(err)
+}
+for _, rec := range resp.Result.Data.DataDetail {
+    fmt.Printf("%s %s %s Yield=%s%% Status=%s\n",
+        rec.AuctionDate, rec.DebtSecuritiesType, rec.ThaiBMASymbol,
+        rec.WeightedAverageAcceptedYield, rec.AuctionStatus)
+}
+```
+
+### License Check
+
+```go
+// Search for authorized entities
+search, err := client.SearchAuthorized(ctx, "keyword", "", 10)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Found %d results\n", search.ResultSetInfo.QueryTotalRecord)
+for _, g := range search.GroupInfo {
+    fmt.Printf("  %s (%s): %d\n", g.TypeNameTH, g.TypeNameEnglish(), g.Count)
+}
+
+// Get license PDF document (returns raw PDF bytes)
+pdfBytes, err := client.GetLicense(ctx, "authId", "docId")
+if err != nil {
+    log.Fatal(err)
+}
+os.WriteFile("license.pdf", pdfBytes, 0644)
+
+// Get authorized entity details
+detail, err := client.GetAuthorizedDetail(ctx, 123)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Name: %s\n", detail.AuthorizationInfo.AuthorizedName)
+fmt.Printf("Type: %s\n", detail.AuthorizationInfo.TypeName)
+```
+
 ## Rate Limits
 
 The client automatically applies the correct rate limit based on the endpoint being called:
@@ -137,6 +184,8 @@ The client automatically applies the correct rate limit based on the endpoint be
 | Exchange Rates | `GetDailyAverageExchangeRate`, `GetDailyReferenceRate`, `GetSpotRate`, `GetSwapPoint`, `GetImpliedInterestRate` | 200 calls/hour |
 | Interest Rates | `GetPolicyRate`, `GetBIBOR`, `GetDepositRate`, `GetLoanRate`, `GetInterbankTransactionRate` | 200 calls/hour |
 | Statistics | `GetCategoryList`, `GetSeriesList`, `GetObservations`, `SearchSeries` | 2000 calls/hour |
+| Debt Securities | `GetDebtSecuritiesAuction` | 200 calls/hour |
+| License Check | `SearchAuthorized`, `GetLicense`, `GetAuthorizedDetail` | 100 calls/hour |
 
 No configuration needed — the client detects the endpoint from the URL and applies the appropriate limiter automatically.
 

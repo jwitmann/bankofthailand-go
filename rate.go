@@ -75,10 +75,12 @@ func (n *NoOpRateLimiter) Wait(ctx context.Context) error {
 const (
 	secondsPerHour = 3600
 
-	RateLimitHolidays      = 100
-	RateLimitExchangeRates = 200
-	RateLimitInterestRates = 200
-	RateLimitStatistics    = 2000
+	RateLimitHolidays       = 100
+	RateLimitExchangeRates  = 200
+	RateLimitInterestRates  = 200
+	RateLimitStatistics     = 2000
+	RateLimitDebtSecurities = 200
+	RateLimitLicenseCheck   = 100
 )
 
 type RateLimitInfo struct {
@@ -96,6 +98,10 @@ func GetRateLimitInfo(endpoint string) RateLimitInfo {
 		return RateLimitInfo{CallsPerHour: RateLimitInterestRates, Quota: "unlimited"}
 	case "category_list", "series_list", "observations", "search":
 		return RateLimitInfo{CallsPerHour: RateLimitStatistics, Quota: "unlimited"}
+	case "debt_security_auction":
+		return RateLimitInfo{CallsPerHour: RateLimitDebtSecurities, Quota: "unlimited"}
+	case "license_check":
+		return RateLimitInfo{CallsPerHour: RateLimitLicenseCheck, Quota: "unlimited"}
 	default:
 		return RateLimitInfo{CallsPerHour: RateLimitHolidays, Quota: "unlimited"}
 	}
@@ -120,4 +126,12 @@ func NewRateLimiterForInterestRates() *TokenBucketRateLimiter {
 
 func NewRateLimiterForStatistics() *TokenBucketRateLimiter {
 	return NewHourlyRateLimiter(RateLimitStatistics)
+}
+
+func NewRateLimiterForDebtSecurities() *TokenBucketRateLimiter {
+	return NewHourlyRateLimiter(RateLimitDebtSecurities)
+}
+
+func NewRateLimiterForLicenseCheck() *TokenBucketRateLimiter {
+	return NewHourlyRateLimiter(RateLimitLicenseCheck)
 }

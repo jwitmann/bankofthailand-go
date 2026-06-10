@@ -20,10 +20,12 @@ const (
 
 // Endpoint keys used for token and rate-limiter selection.
 const (
-	endpointOthers        = "others"
-	endpointExchangeRates = "exchange_rates"
-	endpointInterestRates = "interest_rates"
-	endpointStatistics    = "statistics"
+	endpointOthers         = "others"
+	endpointExchangeRates  = "exchange_rates"
+	endpointInterestRates  = "interest_rates"
+	endpointStatistics     = "statistics"
+	endpointDebtSecurities = "debt_security_auction"
+	endpointLicenseCheck   = "license_check"
 )
 
 // endpointPatterns maps endpoint keys to URL path substrings.
@@ -50,6 +52,12 @@ var endpointPatterns = map[string][]string{
 		"serieslist",
 		"observations",
 		"search-series",
+	},
+	endpointDebtSecurities: {
+		"BondAuction",
+	},
+	endpointLicenseCheck: {
+		"BotLicenseCheckAPI",
 	},
 }
 
@@ -86,10 +94,12 @@ func NewClient(options ...Option) (*Client, error) {
 
 	if client.rateLimiter == nil && client.endpointLimiters == nil {
 		client.endpointLimiters = map[string]RateLimiter{
-			endpointOthers:        NewRateLimiterForHolidays(),
-			endpointExchangeRates: NewRateLimiterForExchangeRates(),
-			endpointInterestRates: NewRateLimiterForInterestRates(),
-			endpointStatistics:    NewRateLimiterForStatistics(),
+			endpointOthers:         NewRateLimiterForHolidays(),
+			endpointExchangeRates:  NewRateLimiterForExchangeRates(),
+			endpointInterestRates:  NewRateLimiterForInterestRates(),
+			endpointStatistics:     NewRateLimiterForStatistics(),
+			endpointDebtSecurities: NewRateLimiterForDebtSecurities(),
+			endpointLicenseCheck:   NewRateLimiterForLicenseCheck(),
 		}
 	}
 

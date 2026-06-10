@@ -13,6 +13,8 @@ Complete reference for the Bank of Thailand Go client.
 - [Exchange Rates](#exchange-rates)
 - [Interest Rates](#interest-rates)
 - [Statistics](#statistics)
+- [Debt Securities Auction](#debt-securities-auction)
+- [License Check](#license-check)
 
 ---
 
@@ -78,6 +80,8 @@ The client automatically selects the appropriate token based on the endpoint URL
 | `exchange_rates` | `Stat-ExchangeRate`, `Stat-ReferenceRate`, `Stat-SpotRate`, `Stat-SwapPoint`, `Stat-ThaiBahtImpliedInterestRate` |
 | `interest_rates` | `PolicyRate`, `BIBOR`, `DepositRate`, `LoanRate`, `Stat-InterbankTransactionRate` |
 | `statistics` | `categorylist`, `serieslist`, `observations`, `search-series` |
+| `debt_security_auction` | `BondAuction` |
+| `license_check` | `BotLicenseCheckAPI` |
 
 ### Single Token
 
@@ -126,6 +130,8 @@ Built-in token bucket rate limiter with **automatic per-API selection**:
 | Exchange Rates | 200 | `GetDailyAverageExchangeRate`, `GetDailyReferenceRate`, `GetSpotRate`, `GetSwapPoint`, `GetImpliedInterestRate` |
 | Interest Rates | 200 | `GetPolicyRate`, `GetBIBOR`, `GetDepositRate`, `GetLoanRate`, `GetInterbankTransactionRate` |
 | Statistics | 2000 | `GetCategoryList`, `GetSeriesList`, `GetObservations`, `SearchSeries` |
+| Debt Securities | 200 | `GetDebtSecuritiesAuction` |
+| License Check | 100 | `SearchAuthorized`, `GetLicense`, `GetAuthorizedDetail` |
 
 ### Usage
 
@@ -643,6 +649,160 @@ type SeriesDetail struct {
 
 ---
 
+## Debt Securities Auction
+
+### GetDebtSecuritiesAuction
+
+```go
+func (c *Client) GetDebtSecuritiesAuction(ctx context.Context, startPeriod, endPeriod string) (*DebtSecuritiesResponse, error)
+```
+
+Fetch government and SOE bond auction results.
+
+**Parameters:**
+
+| Parameter | Format | Required | Description |
+|-----------|--------|----------|-------------|
+| `start_period` | `YYYY-MM-DD` | Yes | Start auction date |
+| `end_period` | `YYYY-MM-DD` | Yes | End auction date |
+
+**Response:** `*DebtSecuritiesResponse`
+
+```go
+type DebtSecuritiesRecord struct {
+    AuctionDate                     string // "2017-09-26"
+    DebtSecuritiesType              string // "Government Bonds"
+    ThaiBMASymbol                   string // "LB233A"
+    ISINCode                        string // "TH0623033303"
+    AuctionNameTh                   string // Thai auction name
+    CFICode                         string // "DBFTFR"
+    CouponRate                      string // "5.5"
+    TimeToMaturity                  string // "5.46 Yrs"
+    PaymentDate                     string // "2017-09-28"
+    StartDateOfInterestEarningPeriod string // "2017-09-13"
+    MaturityDate                    string // "2023-03-13"
+    IssueAmountNCB_CB               string // "2000.0000000"
+    AcceptedAmountNCB_CB            string // "2000.0000000"
+    AcceptedAmountNCB               string // ""
+    AcceptedAmountCB                string // "2000.0000000"
+    GreenshoeOptionAmount           string // "400.0000000"
+    PAOAmount                       string // ""
+    OverAllotmentAmount             string // ""
+    GrandTotalAmount                string // "2400.0000000"
+    AcceptedLowestYield             string // "1.7070000"
+    AcceptedHighestYield            string // "1.7090000"
+    WeightedAverageAcceptedYield    string // "1.7077000"
+    BidCoverageRatio                string // "2.2000000"
+    AuctionStatus                   string // "Approve"
+}
+```
+
+---
+
+## License Check
+
+### SearchAuthorized
+
+```go
+func (c *Client) SearchAuthorized(ctx context.Context, keyword string, page string, limit int) (*LicenseCheckResponse, error)
+```
+
+Search for BOT-supervised business licenses (P-Loan, Nano Finance, e-Money, etc.).
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `keyword` | `string` | Yes | Search keyword |
+| `page` | `string` | No | Page position |
+| `limit` | `int` | No | Results per page |
+
+**Response:** `*LicenseCheckResponse`
+
+```go
+type LicenseCheckResponse struct {
+    ResultSet     []map[string]interface{} // Varying license record fields
+    ResultSetInfo LicenseResultSetInfo     // Pagination info
+    GroupInfo     []LicenseGroupInfo       // Category breakdown
+}
+
+type LicenseGroupInfo struct {
+    TypeCode   string // "j", "i", "b", or ""
+    TypeNameTH string // "นิติบุคคล", "บุคคล", "สถานประกอบการ", "ทั้งหมด"
+    Count      int
+}
+```
+
+**Translation:**
+
+```go
+for _, g := range resp.GroupInfo {
+    fmt.Printf("%s (%s): %d\n", g.TypeNameTH, g.TypeNameEnglish(), g.Count)
+}
+// Output:
+// นิติบุคคล (Legal Entity): 42
+// บุคคล (Individual): 5
+// สถานประกอบการ (Business Establishment): 12
+```
+
+### GetLicense
+
+```go
+func (c *Client) GetLicense(ctx context.Context, authID, docID string) ([]byte, error)
+```
+
+Download a license document as a **PDF**.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `authId` | `string` | Yes | Authorized entity ID |
+| `docId` | `string` | Yes | Document reference number |
+
+**Returns:** `[]byte` containing the PDF document.
+
+**Example:**
+
+```go
+pdfBytes, err := client.GetLicense(ctx, "12345", "DOC-2024-001")
+if err != nil {
+    log.Fatal(err)
+}
+os.WriteFile("license.pdf", pdfBytes, 0644)
+```
+
+### GetAuthorizedDetail
+
+```go
+func (c *Client) GetAuthorizedDetail(ctx context.Context, id int) (*AuthorizedDetailResponse, error)
+```
+
+Fetch detailed information about an authorized entity.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `int` | Yes | Entity ID |
+
+**Response:** `*AuthorizedDetailResponse`
+
+```go
+type AuthorizedDetailResponse struct {
+    AuthorizationInfo struct {
+        ID             string // "123"
+        AuthorizedName string // "บริษัท ... จำกัด"
+        BranchName     string // ""
+        TypeID         string // "ผู้ประกอบธุรกิจ..."
+        TypeName       string // "ผู้ประกอบธุรกิจ..."
+        LastUpdate     string // "10/06/2026"
+    }
+}
+```
+
+---
+
 ## Common Response Patterns
 
 ### Result Wrapper
@@ -696,3 +856,7 @@ type DataHeader struct {
 | `GetCategoryList` | `*CategoryListResponse` | `gateway.api.bot.or.th/categorylist` |
 | `GetObservations` | `*ObservationsResponse` | `gateway.api.bot.or.th/observations` |
 | `SearchSeries` | `*SearchResponse` | `gateway.api.bot.or.th/search-series` |
+| `GetDebtSecuritiesAuction` | `*DebtSecuritiesResponse` | `gateway.api.bot.or.th/BondAuction/bond_auction_v2` |
+| `SearchAuthorized` | `*LicenseCheckResponse` | `gateway.api.bot.or.th/BotLicenseCheckAPI` |
+| `GetLicense` | `[]byte` (PDF) | `gateway.api.bot.or.th/BotLicenseCheckAPI` |
+| `GetAuthorizedDetail` | `*AuthorizedDetailResponse` | `gateway.api.bot.or.th/BotLicenseCheckAPI` |

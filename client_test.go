@@ -222,6 +222,8 @@ func TestGetRateLimitInfo(t *testing.T) {
 		{"series_list", RateLimitInfo{CallsPerHour: 2000, Quota: "unlimited"}},
 		{"observations", RateLimitInfo{CallsPerHour: 2000, Quota: "unlimited"}},
 		{"search", RateLimitInfo{CallsPerHour: 2000, Quota: "unlimited"}},
+		{"debt_security_auction", RateLimitInfo{CallsPerHour: 200, Quota: "unlimited"}},
+		{"license_check", RateLimitInfo{CallsPerHour: 100, Quota: "unlimited"}},
 		{"unknown", RateLimitInfo{CallsPerHour: 100, Quota: "unlimited"}},
 	}
 

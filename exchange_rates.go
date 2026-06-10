@@ -2,7 +2,6 @@ package bankofthailand
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 )
 
@@ -130,15 +129,9 @@ func (c *Client) GetDailyAverageExchangeRate(ctx context.Context, startPeriod, e
 	query := url.Values{}
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
-	if currency != "" {
-		query.Set("currency", currency)
-	}
+	setQuery(query, "currency", currency)
 
-	var result ExchangeRateResponse
-	if err := c.requestJSON(ctx, exchangeRateBaseURL, "/DAILY_AVG_EXG_RATE/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get exchange rate: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[ExchangeRateResponse](ctx, c, exchangeRateBaseURL, "/DAILY_AVG_EXG_RATE/", query, "failed to get exchange rate")
 }
 
 func (c *Client) GetDailyReferenceRate(ctx context.Context, startPeriod, endPeriod string) (*ReferenceRateResponse, error) {
@@ -146,11 +139,7 @@ func (c *Client) GetDailyReferenceRate(ctx context.Context, startPeriod, endPeri
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	var result ReferenceRateResponse
-	if err := c.requestJSON(ctx, referenceRateBaseURL, "/DAILY_REF_RATE/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get reference rate: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[ReferenceRateResponse](ctx, c, referenceRateBaseURL, "/DAILY_REF_RATE/", query, "failed to get reference rate")
 }
 
 func (c *Client) GetSpotRate(ctx context.Context, startPeriod, endPeriod string) (*SpotRateResponse, error) {
@@ -158,39 +147,23 @@ func (c *Client) GetSpotRate(ctx context.Context, startPeriod, endPeriod string)
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	var result SpotRateResponse
-	if err := c.requestJSON(ctx, spotRateBaseURL, "/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get spot rate: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[SpotRateResponse](ctx, c, spotRateBaseURL, "/", query, "failed to get spot rate")
 }
 
 func (c *Client) GetSwapPoint(ctx context.Context, startPeriod, endPeriod, termType string) (*SwapPointResponse, error) {
 	query := url.Values{}
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
-	if termType != "" {
-		query.Set("term_type", termType)
-	}
+	setQuery(query, "term_type", termType)
 
-	var result SwapPointResponse
-	if err := c.requestJSON(ctx, swapPointBaseURL, "/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get swap point: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[SwapPointResponse](ctx, c, swapPointBaseURL, "/", query, "failed to get swap point")
 }
 
 func (c *Client) GetImpliedInterestRate(ctx context.Context, startPeriod, endPeriod, rateType string) (*ImpliedRateResponse, error) {
 	query := url.Values{}
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
-	if rateType != "" {
-		query.Set("rate_type", rateType)
-	}
+	setQuery(query, "rate_type", rateType)
 
-	var result ImpliedRateResponse
-	if err := c.requestJSON(ctx, impliedRateBaseURL, "/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get implied rate: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[ImpliedRateResponse](ctx, c, impliedRateBaseURL, "/", query, "failed to get implied rate")
 }

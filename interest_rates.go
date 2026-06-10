@@ -2,7 +2,6 @@ package bankofthailand
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 )
 
@@ -125,26 +124,16 @@ type InterbankTransactionRateData struct {
 }
 
 func (c *Client) GetPolicyRate(ctx context.Context) (*PolicyRateResponse, error) {
-	var result PolicyRateResponse
-	if err := c.requestJSON(ctx, policyRateBaseURL, "/", nil, &result); err != nil {
-		return nil, fmt.Errorf("failed to get policy rate: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[PolicyRateResponse](ctx, c, policyRateBaseURL, "/", nil, "failed to get policy rate")
 }
 
 func (c *Client) GetBIBOR(ctx context.Context, startPeriod, endPeriod, bank string) (*BIBORResponse, error) {
 	query := url.Values{}
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
-	if bank != "" {
-		query.Set("bank", bank)
-	}
+	setQuery(query, "bank", bank)
 
-	var result BIBORResponse
-	if err := c.requestJSON(ctx, biborBaseURL, "/bibor_rate/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get BIBOR: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[BIBORResponse](ctx, c, biborBaseURL, "/bibor_rate/", query, "failed to get BIBOR")
 }
 
 func (c *Client) GetBIBORAverage(ctx context.Context, startPeriod, endPeriod string) (*BIBORResponse, error) {
@@ -152,11 +141,7 @@ func (c *Client) GetBIBORAverage(ctx context.Context, startPeriod, endPeriod str
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	var result BIBORResponse
-	if err := c.requestJSON(ctx, biborBaseURL, "/bibor_avg_rate/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get BIBOR average: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[BIBORResponse](ctx, c, biborBaseURL, "/bibor_avg_rate/", query, "failed to get BIBOR average")
 }
 
 func (c *Client) GetDepositRate(ctx context.Context, startPeriod, endPeriod string) (*DepositRateResponse, error) {
@@ -164,11 +149,7 @@ func (c *Client) GetDepositRate(ctx context.Context, startPeriod, endPeriod stri
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	var result DepositRateResponse
-	if err := c.requestJSON(ctx, depositRateBaseURL, "/deposit_rate/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get deposit rate: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[DepositRateResponse](ctx, c, depositRateBaseURL, "/deposit_rate/", query, "failed to get deposit rate")
 }
 
 func (c *Client) GetLoanRate(ctx context.Context, startPeriod, endPeriod string) (*LoanRateResponse, error) {
@@ -176,24 +157,14 @@ func (c *Client) GetLoanRate(ctx context.Context, startPeriod, endPeriod string)
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	var result LoanRateResponse
-	if err := c.requestJSON(ctx, loanRateBaseURL, "/loan_rate/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get loan rate: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[LoanRateResponse](ctx, c, loanRateBaseURL, "/loan_rate/", query, "failed to get loan rate")
 }
 
 func (c *Client) GetInterbankTransactionRate(ctx context.Context, startPeriod, endPeriod, termType string) (*InterbankTransactionRateResponse, error) {
 	query := url.Values{}
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
-	if termType != "" {
-		query.Set("term_type", termType)
-	}
+	setQuery(query, "term_type", termType)
 
-	var result InterbankTransactionRateResponse
-	if err := c.requestJSON(ctx, interbankTransactionBaseURL, "/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get interbank transaction rate: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[InterbankTransactionRateResponse](ctx, c, interbankTransactionBaseURL, "/", query, "failed to get interbank transaction rate")
 }

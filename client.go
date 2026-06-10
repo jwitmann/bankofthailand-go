@@ -125,16 +125,16 @@ func (c *Client) loadConfig() error {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
+	c.appID = cfg.AppID
+
 	if len(cfg.Tokens) > 0 {
 		c.tokens = cfg.Tokens
 		c.token = cfg.Token
-		c.appID = cfg.AppID
 		return nil
 	}
 
 	if cfg.Token != "" {
 		c.token = cfg.Token
-		c.appID = cfg.AppID
 		return nil
 	}
 
@@ -148,11 +148,7 @@ func endpointKeyForURL(urlStr string) string {
 	if err != nil {
 		return ""
 	}
-	path := u.Path
-	if path == "" {
-		path = u.Host
-	}
-	pathLower := strings.ToLower(path)
+	pathLower := strings.ToLower(u.Path)
 	for key, patterns := range endpointPatterns {
 		for _, p := range patterns {
 			if strings.Contains(pathLower, strings.ToLower(p)) {
@@ -246,23 +242,16 @@ func (c *Client) GetURL(ctx context.Context, urlStr string) (*http.Response, err
 	return c.do(req)
 }
 
-func (c *Client) requestJSON(ctx context.Context, baseURL, path string, query url.Values, result interface{}) error {
-	u, _ := url.Parse(baseURL + path)
+func (c *Client) requestGet(ctx context.Context, baseURL, path string, query url.Values, result interface{}) error {
+	u, err := url.Parse(baseURL + path)
+	if err != nil {
+		return fmt.Errorf("invalid url: %w", err)
+	}
 	if query != nil {
 		u.RawQuery = query.Encode()
 	}
 
 	resp, err := c.GetURL(ctx, u.String())
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	return json.NewDecoder(resp.Body).Decode(result)
-}
-
-func (c *Client) requestJSONBase(ctx context.Context, path string, query url.Values, result interface{}) error {
-	resp, err := c.Get(ctx, path, query)
 	if err != nil {
 		return err
 	}
@@ -292,6 +281,23 @@ func (c *Client) rateLimiterForURL(urlStr string) RateLimiter {
 	return nil
 }
 
+func setQuery(v url.Values, key, value string) {
+	if value != "" {
+		v.Set(key, value)
+	}
+}
+
+func getEndpoint[T any](ctx context.Context, c *Client, baseURL, path string, query url.Values, errMsg string) (*T, error) {
+	var result T
+	if err := c.requestGet(ctx, baseURL, path, query, &result); err != nil {
+		if errMsg != "" {
+			return nil, fmt.Errorf("%s: %w", errMsg, err)
+		}
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *Client) do(req *http.Request) (*http.Response, error) {
 	if limiter := c.rateLimiterForURL(req.URL.String()); limiter != nil {
 		if err := limiter.Wait(req.Context()); err != nil {
@@ -299,6 +305,19 @@ func (c *Client) do(req *http.Request) (*http.Response, error) {
 		}
 	}
 
+	resp, err := c.doWithRetry(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, NewAPIError(resp)
+	}
+
+	return resp, nil
+}
+
+func (c *Client) doWithRetry(req *http.Request) (*http.Response, error) {
 	var resp *http.Response
 	var err error
 
@@ -329,10 +348,6 @@ func (c *Client) do(req *http.Request) (*http.Response, error) {
 
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode >= 400 {
-		return nil, NewAPIError(resp)
 	}
 
 	return resp, nil

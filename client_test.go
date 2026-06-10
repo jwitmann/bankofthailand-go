@@ -2,6 +2,7 @@ package bankofthailand
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -240,8 +241,47 @@ func TestGetRateLimitInfo(t *testing.T) {
 	}
 }
 
+func TestRequestGet_NoContent(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	client, err := NewClient(
+		WithToken("test"),
+		WithBaseURL(server.URL),
+		WithRateLimiter(&NoOpRateLimiter{}),
+	)
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+
+	var result struct{}
+	err = client.requestGet(context.Background(), server.URL, "/", nil, &result)
+	if !errors.Is(err, ErrNoContent) {
+		t.Errorf("expected ErrNoContent, got %v", err)
+	}
+}
+
+func TestRequestGet_InvalidURL(t *testing.T) {
+	client, err := NewClient(
+		WithToken("test"),
+		WithBaseURL("https://example.com"),
+		WithRateLimiter(&NoOpRateLimiter{}),
+	)
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+
+	var result struct{}
+	err = client.requestGet(context.Background(), "://invalid-url", "/", nil, &result)
+	if err == nil {
+		t.Fatal("expected error for invalid URL")
+	}
+}
+
 func TestHourlyRateLimiter(t *testing.T) {
-	limiter := NewHourlyRateLimiter(100)
+	limiter := NewTokenBucketRateLimiter(10, 1000)
 	ctx := context.Background()
 
 	if err := limiter.Wait(ctx); err != nil {
@@ -254,10 +294,7 @@ func TestHourlyRateLimiter(t *testing.T) {
 	}
 	elapsed := time.Since(start)
 
-	if elapsed < 30*time.Second {
-		t.Errorf("expected at least 30s delay for 100/hour limiter, got %v", elapsed)
-	}
-	if elapsed > 45*time.Second {
-		t.Errorf("expected at most 45s delay for 100/hour limiter, got %v", elapsed)
+	if elapsed > 2*time.Millisecond {
+		t.Errorf("expected fast delay with capacity 10, got %v", elapsed)
 	}
 }

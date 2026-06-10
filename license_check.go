@@ -73,18 +73,12 @@ type AuthorizedDetailResponse struct {
 func (c *Client) SearchAuthorized(ctx context.Context, keyword string, page string, limit int) (*LicenseCheckResponse, error) {
 	query := url.Values{}
 	query.Set("keyword", keyword)
-	if page != "" {
-		query.Set("page", page)
-	}
+	setQuery(query, "page", page)
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
 	}
 
-	var result LicenseCheckResponse
-	if err := c.requestJSON(ctx, licenseCheckBaseURL, "/SearchAuthorized", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to search authorized: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[LicenseCheckResponse](ctx, c, licenseCheckBaseURL, "/SearchAuthorized", query, "failed to search authorized")
 }
 
 func (c *Client) GetLicense(ctx context.Context, authID, docID string) ([]byte, error) {
@@ -92,7 +86,10 @@ func (c *Client) GetLicense(ctx context.Context, authID, docID string) ([]byte, 
 	query.Set("authId", authID)
 	query.Set("docId", docID)
 
-	u, _ := url.Parse(licenseCheckBaseURL + "/License")
+	u, err := url.Parse(licenseCheckBaseURL + "/License")
+	if err != nil {
+		return nil, fmt.Errorf("invalid license url: %w", err)
+	}
 	u.RawQuery = query.Encode()
 
 	resp, err := c.GetURL(ctx, u.String())
@@ -112,9 +109,5 @@ func (c *Client) GetAuthorizedDetail(ctx context.Context, id int) (*AuthorizedDe
 	query := url.Values{}
 	query.Set("id", strconv.Itoa(id))
 
-	var result AuthorizedDetailResponse
-	if err := c.requestJSON(ctx, licenseCheckBaseURL, "/AuthorizedDetail", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get authorized detail: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[AuthorizedDetailResponse](ctx, c, licenseCheckBaseURL, "/AuthorizedDetail", query, "failed to get authorized detail")
 }

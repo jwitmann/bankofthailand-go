@@ -21,7 +21,7 @@ func (c *Client) GetHolidaysRaw(ctx context.Context, year int) (*HolidaysRespons
 	query.Set("year", strconv.Itoa(year))
 
 	var result HolidaysResponse
-	if err := c.requestJSONBase(ctx, "/", query, &result); err != nil {
+	if err := c.requestGet(ctx, c.baseURL, "/", query, &result); err != nil {
 		if errors.Is(err, ErrNoContent) {
 			return &HolidaysResponse{Result: HolidaysResult{Data: []Holiday{}}}, nil
 		}

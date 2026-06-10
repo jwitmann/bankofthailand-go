@@ -13,6 +13,9 @@ func WithHTTPClient(httpClient *http.Client) Option {
 	}
 }
 
+// WithBaseURL overrides the base URL for the Holidays endpoint only.
+// Other endpoints (exchange rates, interest rates, statistics, etc.)
+// use hard-coded base URLs from the Bank of Thailand API documentation.
 func WithBaseURL(baseURL string) Option {
 	return func(c *Client) {
 		c.baseURL = baseURL

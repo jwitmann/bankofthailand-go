@@ -1,6 +1,7 @@
 package bankofthailand
 
 import (
+	"math"
 	"net"
 	"net/http"
 	"time"
@@ -25,7 +26,7 @@ func DefaultRetryPolicy() *RetryPolicy {
 }
 
 func (r *RetryPolicy) Backoff(attempt int) time.Duration {
-	delay := float64(r.BaseDelay) * pow(r.Multiplier, float64(attempt-1))
+	delay := float64(r.BaseDelay) * math.Pow(r.Multiplier, float64(attempt-1))
 	if delay > float64(r.MaxDelay) {
 		delay = float64(r.MaxDelay)
 	}
@@ -51,12 +52,4 @@ func (r *RetryPolicy) ShouldRetryStatus(statusCode int) bool {
 		}
 	}
 	return false
-}
-
-func pow(base, exp float64) float64 {
-	result := 1.0
-	for i := 0; i < int(exp); i++ {
-		result *= base
-	}
-	return result
 }

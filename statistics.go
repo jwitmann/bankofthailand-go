@@ -2,7 +2,6 @@ package bankofthailand
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 )
 
@@ -102,49 +101,29 @@ type SeriesDetail struct {
 }
 
 func (c *Client) GetCategoryList(ctx context.Context) (*CategoryListResponse, error) {
-	var result CategoryListResponse
-	if err := c.requestJSON(ctx, categoryListBaseURL, "/category_list/", nil, &result); err != nil {
-		return nil, fmt.Errorf("failed to get category list: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[CategoryListResponse](ctx, c, categoryListBaseURL, "/category_list/", nil, "failed to get category list")
 }
 
 func (c *Client) GetSeriesList(ctx context.Context, category string) (*SeriesListResponse, error) {
 	query := url.Values{}
 	query.Set("category", category)
 
-	var result SeriesListResponse
-	if err := c.requestJSON(ctx, categoryListBaseURL, "/series_list/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get series list: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[SeriesListResponse](ctx, c, categoryListBaseURL, "/series_list/", query, "failed to get series list")
 }
 
 func (c *Client) GetObservations(ctx context.Context, seriesCode, startPeriod, endPeriod, sortBy string) (*ObservationsResponse, error) {
 	query := url.Values{}
 	query.Set("series_code", seriesCode)
 	query.Set("start_period", startPeriod)
-	if endPeriod != "" {
-		query.Set("end_period", endPeriod)
-	}
-	if sortBy != "" {
-		query.Set("sort_by", sortBy)
-	}
+	setQuery(query, "end_period", endPeriod)
+	setQuery(query, "sort_by", sortBy)
 
-	var result ObservationsResponse
-	if err := c.requestJSON(ctx, observationsBaseURL, "/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get observations: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[ObservationsResponse](ctx, c, observationsBaseURL, "/", query, "failed to get observations")
 }
 
 func (c *Client) SearchSeries(ctx context.Context, keyword string) (*SearchResponse, error) {
 	query := url.Values{}
 	query.Set("keyword", keyword)
 
-	var result SearchResponse
-	if err := c.requestJSON(ctx, searchBaseURL, "/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to search series: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[SearchResponse](ctx, c, searchBaseURL, "/", query, "failed to search series")
 }

@@ -2,7 +2,6 @@ package bankofthailand
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 )
 
@@ -61,9 +60,5 @@ func (c *Client) GetDebtSecuritiesAuction(ctx context.Context, startPeriod, endP
 	query.Set("start_period", startPeriod)
 	query.Set("end_period", endPeriod)
 
-	var result DebtSecuritiesResponse
-	if err := c.requestJSON(ctx, debtSecuritiesBaseURL, "/", query, &result); err != nil {
-		return nil, fmt.Errorf("failed to get debt securities auction: %w", err)
-	}
-	return &result, nil
+	return getEndpoint[DebtSecuritiesResponse](ctx, c, debtSecuritiesBaseURL, "/", query, "failed to get debt securities auction")
 }

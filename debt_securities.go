@@ -48,6 +48,14 @@ type DebtSecuritiesRecord struct {
 	AuctionStatus                    string `json:"auction_st"`
 }
 
+func (r DebtSecuritiesRecord) AuctionName(loc Locale) string {
+	return pickString(loc, r.AuctionNameTh, translateAuctionName(r.AuctionNameTh))
+}
+
+func (r DebtSecuritiesRecord) ReOpenFrom(loc Locale) string {
+	return pickString(loc, r.ReOpenFromTh, translateAuctionName(r.ReOpenFromTh))
+}
+
 func (c *Client) GetDebtSecuritiesAuction(ctx context.Context, startPeriod, endPeriod string) (*DebtSecuritiesResponse, error) {
 	query := url.Values{}
 	query.Set("start_period", startPeriod)

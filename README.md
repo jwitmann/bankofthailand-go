@@ -18,6 +18,7 @@
 - **Per-Endpoint Authentication** — Different API tokens per service category
 - **Path-Aware Rate Limiting** — Automatic rate limit selection by endpoint
 - **Retry Logic** — Exponential backoff with configurable status codes
+- **Locale & Translation** — Bilingual field accessors with Thai→English translation for debt securities auction names and license business types
 - **CLI Tool** — `bot-holidays` command-line utility
 
 > **Complete API Coverage** — This client implements every published BOT Public API endpoint, including the recently added Debt Securities Auction and License Check catalogues.
@@ -141,21 +142,27 @@ if err != nil {
     log.Fatal(err)
 }
 for _, rec := range resp.Result.Data.DataDetail {
-    fmt.Printf("%s %s %s Yield=%s%% Status=%s\n",
-        rec.AuctionDate, rec.DebtSecuritiesType, rec.ThaiBMASymbol,
-        rec.WeightedAverageAcceptedYield, rec.AuctionStatus)
+    fmt.Printf("%s %s Yield=%s%%\n",
+        rec.AuctionDate,
+        rec.AuctionName(bot.LocaleEnglish), // "Government Bond in Fiscal Year 2017 (B.E. 2560), Issue 1"
+        rec.WeightedAverageAcceptedYield)
 }
 ```
 
 ### License Check
 
 ```go
-// Search for authorized entities
-search, err := client.SearchAuthorized(ctx, "keyword", "", 10)
+// Search for authorized entities (Thai keywords work best)
+search, err := client.SearchAuthorized(ctx, "ธนาคาร", "", 10)
 if err != nil {
     log.Fatal(err)
 }
 fmt.Printf("Found %d results\n", search.ResultSetInfo.QueryTotalRecord)
+for _, rec := range search.ResultSet {
+    fmt.Printf("  %s — %s\n",
+        rec.AuthorizedName,
+        rec.TypeNameLocalized(bot.LocaleEnglish)) // "Government Savings Bank"
+}
 for _, g := range search.GroupInfo {
     fmt.Printf("  %s (%s): %d\n", g.TypeNameTH, g.TypeNameEnglish(), g.Count)
 }
@@ -206,6 +213,33 @@ client, _ := bot.NewClient(
 info := bot.GetRateLimitInfo("exchange_rates")
 fmt.Printf("Limit: %d calls/hour, Quota: %s\n", info.CallsPerHour, info.Quota)
 ```
+
+## Locale & Translation
+
+Some BOT APIs return Thai-only text fields. The client provides bilingual accessors that return Thai or English based on a `Locale` parameter, with automatic translation where possible:
+
+```go
+// Debt Securities — auction names with Buddhist year conversion
+rec.AuctionName(bot.LocaleEnglish)
+// → "Government Bond in Fiscal Year 2017 (B.E. 2560), Issue 1"
+rec.AuctionName(bot.LocaleThai)
+// → "พันธบัตรรัฐบาลในปีงบประมาณ พ.ศ.2560 ครั้งที่ 1"
+
+rec.ReOpenFrom(bot.LocaleEnglish)
+// → "Government Bond in Fiscal Year 2008 (B.E. 2551), Issue 4"
+
+// License Check — business type names
+rec.TypeNameLocalized(bot.LocaleEnglish)
+// → "Thai Commercial Bank"
+rec.TypeNameLocalized(bot.LocaleThai)
+// → "ธนาคารพาณิชย์ไทย"
+
+// Group info — hardcoded type translations
+g.TypeNameEnglish()
+// → "Legal Entity", "Individual", "Business Establishment", "All"
+```
+
+Translation is **best-effort** based on pattern matching and dictionaries. Unknown terms fall back to the original Thai text.
 
 ## Configuration Options
 

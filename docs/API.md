@@ -9,6 +9,7 @@ Complete reference for the Bank of Thailand Go client.
 - [Rate Limiting](#rate-limiting)
 - [Retry Logic](#retry-logic)
 - [Error Handling](#error-handling)
+- [Locale & Translation](#locale--translation)
 - [Holidays](#holidays)
 - [Exchange Rates](#exchange-rates)
 - [Interest Rates](#interest-rates)
@@ -227,6 +228,49 @@ if err != nil {
 |-------|------|-------------|
 | `StatusCode` | `int` | HTTP status code |
 | `Message` | `string` | Response body or status text |
+
+---
+
+## Locale & Translation
+
+The client provides bilingual accessors via the `Locale` type:
+
+```go
+const LocaleThai Locale = "th"
+const LocaleEnglish Locale = "en"
+```
+
+Methods accept a `Locale` and return the appropriate language, falling back to the other language if empty.
+
+### Debt Securities Auction
+
+```go
+rec.AuctionName(bot.LocaleEnglish)
+// → "Government Bond in Fiscal Year 2017 (B.E. 2560), Issue 1"
+// Pattern: extracts bond type, converts Buddhist year to Gregorian,
+// formats "{BondType} in Fiscal Year {Gregorian} (B.E. {Buddhist}), Issue {N}"
+
+rec.AuctionName(bot.LocaleThai)
+// → "พันธบัตรรัฐบาลในปีงบประมาณ พ.ศ.2560 ครั้งที่ 1" (original Thai)
+
+rec.ReOpenFrom(bot.LocaleEnglish)
+// Same translation logic for reopen-from auction names
+```
+
+### License Check
+
+```go
+rec.TypeNameLocalized(bot.LocaleEnglish)
+// → "Thai Commercial Bank" (dictionary lookup)
+rec.TypeNameLocalized(bot.LocaleThai)
+// → "ธนาคารพาณิชย์ไทย" (original Thai)
+
+g.TypeNameEnglish()
+// → "Legal Entity", "Individual", "Business Establishment", or "All"
+// (hardcoded from TypeCode: "j", "i", "b", "")
+```
+
+Translation is **best-effort**. Unknown terms fall back to the original Thai text.
 
 ---
 
@@ -674,8 +718,9 @@ type DebtSecuritiesRecord struct {
     DebtSecuritiesType              string // "Government Bonds"
     ThaiBMASymbol                   string // "LB233A"
     ISINCode                        string // "TH0623033303"
-    AuctionNameTh                   string // Thai auction name
+    AuctionNameTh                   string // Thai auction name (raw)
     CFICode                         string // "DBFTFR"
+    ReOpenFromTh                    string // Thai reopen-from name (raw)
     CouponRate                      string // "5.5"
     TimeToMaturity                  string // "5.46 Yrs"
     PaymentDate                     string // "2017-09-28"
@@ -695,6 +740,20 @@ type DebtSecuritiesRecord struct {
     BidCoverageRatio                string // "2.2000000"
     AuctionStatus                   string // "Approve"
 }
+```
+
+**Locale Methods:**
+
+```go
+// AuctionName returns Thai or English auction name
+rec.AuctionName(bot.LocaleEnglish)
+// → "Government Bond in Fiscal Year 2017 (B.E. 2560), Issue 1"
+rec.AuctionName(bot.LocaleThai)
+// → "พันธบัตรรัฐบาลในปีงบประมาณ พ.ศ.2560 ครั้งที่ 1"
+
+// ReOpenFrom returns Thai or English reopen-from name
+rec.ReOpenFrom(bot.LocaleEnglish)
+// → "Government Bond in Fiscal Year 2008 (B.E. 2551), Issue 4"
 ```
 
 ---
@@ -721,9 +780,22 @@ Search for BOT-supervised business licenses (P-Loan, Nano Finance, e-Money, etc.
 
 ```go
 type LicenseCheckResponse struct {
-    ResultSet     []map[string]interface{} // Varying license record fields
+    ResultSet     []AuthorizedSearchResult // Typed search results
     ResultSetInfo LicenseResultSetInfo     // Pagination info
     GroupInfo     []LicenseGroupInfo       // Category breakdown
+}
+
+type AuthorizedSearchResult struct {
+    ID             string // "1"
+    AuthorizedName string // " ธนาคารออมสิน "
+    BranchName     string // " ธนาคารออมสิน "
+    TypeID         string // "ธนาคารออมสิน"
+    TypeName       string // "ธนาคารออมสิน" (Thai business type)
+    LastUpdate     string // ""
+    Address        string // "470 ถนนพหลโยธิน..."
+    Telephone      string // "0-2299-8000"
+    DepositFlag    string // "T" or "F"
+    LoanFlag       string // "T" or "F"
 }
 
 type LicenseGroupInfo struct {
@@ -736,6 +808,13 @@ type LicenseGroupInfo struct {
 **Translation:**
 
 ```go
+for _, rec := range resp.ResultSet {
+    fmt.Printf("%s — %s\n",
+        rec.AuthorizedName,
+        rec.TypeNameLocalized(bot.LocaleEnglish))
+    // → " ธนาคารออมสิน  — Government Savings Bank"
+}
+
 for _, g := range resp.GroupInfo {
     fmt.Printf("%s (%s): %d\n", g.TypeNameTH, g.TypeNameEnglish(), g.Count)
 }
